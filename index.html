@@ -678,6 +678,20 @@ a { color: inherit; text-decoration: none; }
 }
 .login-msg.ok  { color: oklch(42% 0.14 148); font-style: normal; font-weight: 500; }
 .login-msg.err { color: oklch(45% 0.16 22);  font-style: normal; }
+.login-otp-hint {
+  font-size: var(--tx-sm); color: var(--t2); margin-bottom: var(--sp4);
+  line-height: 1.5;
+}
+.login-otp {
+  font-size: 2rem; font-family: var(--f-display); font-weight: 800;
+  letter-spacing: 10px; text-align: center;
+}
+.login-back {
+  background: none; border: none; cursor: pointer; margin-top: var(--sp3);
+  font-size: var(--tx-sm); color: var(--t3); font-family: var(--f-body);
+  transition: color .15s;
+}
+.login-back:hover { color: var(--t1); }
 
 /* ── USER CHIP (topbar) ──────────────────────────────────── */
 .user-chip {
@@ -726,11 +740,28 @@ a { color: inherit; text-decoration: none; }
   <div class="login-box">
     <div class="login-logo">Diario de Café</div>
     <div class="login-sub">Carla · Acceso personal</div>
-    <form class="login-form" onsubmit="loginConEmail(event)">
-      <input class="login-input" id="loginEmail" type="email"
-             placeholder="tu@email.com" autocomplete="email" required>
-      <button class="login-btn" id="loginBtn" type="submit">Entrar</button>
-    </form>
+
+    <!-- Paso 1: email -->
+    <div id="loginStep1">
+      <form class="login-form" onsubmit="pedirCodigo(event)">
+        <input class="login-input" id="loginEmail" type="email"
+               placeholder="tu@email.com" autocomplete="email" required>
+        <button class="login-btn" id="loginBtn" type="submit">Enviar código</button>
+      </form>
+    </div>
+
+    <!-- Paso 2: código OTP -->
+    <div id="loginStep2" style="display:none">
+      <div class="login-otp-hint" id="loginOtpHint"></div>
+      <form class="login-form" onsubmit="verificarCodigo(event)">
+        <input class="login-input login-otp" id="loginCode" type="text"
+               inputmode="numeric" placeholder="· · · · · ·"
+               maxlength="6" autocomplete="one-time-code" required>
+        <button class="login-btn" id="loginOtpBtn" type="submit">Entrar</button>
+      </form>
+      <button class="login-back" onclick="volverPaso1()">← Cambiar email</button>
+    </div>
+
     <div class="login-msg" id="loginMsg"></div>
   </div>
 </div>
@@ -1217,26 +1248,52 @@ function mostrarToast(msg, esError) {
 /* ═══════════════════════════════════════════════════════════
    AUTH — magic link por email
 ══════════════════════════════════════════════════════════ */
-async function loginConEmail(e) {
+let _otpEmail = '';
+
+async function pedirCodigo(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim();
   const btn   = document.getElementById('loginBtn');
   const msg   = document.getElementById('loginMsg');
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
-  const { error } = await supa.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: 'https://cmonroyrivas.github.io/coffee/' }
-  });
-  btn.disabled = false;
-  btn.textContent = 'Entrar';
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  const { error } = await supa.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  btn.disabled = false; btn.textContent = 'Enviar código';
   if (error) {
     msg.className = 'login-msg err';
-    msg.textContent = 'Error: ' + error.message;
+    msg.textContent = error.message;
   } else {
-    msg.className = 'login-msg ok';
-    msg.textContent = '✓ Revisa tu email — te enviamos un link de acceso. Puedes cerrar esta pestaña.';
+    _otpEmail = email;
+    msg.className = ''; msg.textContent = '';
+    document.getElementById('loginStep1').style.display = 'none';
+    document.getElementById('loginStep2').style.display = 'block';
+    document.getElementById('loginOtpHint').textContent =
+      'Revisa ' + email + ' — ingresa el código de 6 dígitos que te enviamos.';
+    document.getElementById('loginCode').focus();
   }
+}
+
+async function verificarCodigo(e) {
+  e.preventDefault();
+  const token = document.getElementById('loginCode').value.trim();
+  const btn   = document.getElementById('loginOtpBtn');
+  const msg   = document.getElementById('loginMsg');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  const { error } = await supa.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (error) {
+    msg.className = 'login-msg err';
+    msg.textContent = 'Código incorrecto o expirado — intenta de nuevo.';
+    document.getElementById('loginCode').value = '';
+    document.getElementById('loginCode').focus();
+  }
+  /* Si exitoso, onAuthStateChange → SIGNED_IN maneja el resto */
+}
+
+function volverPaso1() {
+  document.getElementById('loginStep2').style.display = 'none';
+  document.getElementById('loginStep1').style.display = 'block';
+  document.getElementById('loginMsg').textContent = '';
+  document.getElementById('loginCode').value = '';
 }
 
 async function logout() {
