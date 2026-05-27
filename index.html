@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Geologica:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── TOKENS ─────────────────────────────────────────────── */
 :root {
@@ -613,6 +614,87 @@ a { color: inherit; text-decoration: none; }
 .big-stat .bv { font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 900; color: var(--t1); line-height: 1; }
 .big-stat .bl { font-size: var(--tx-xs); font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
 
+/* ── TOAST ───────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px);
+  background: var(--t1); color: oklch(99% 0 0);
+  padding: 10px 20px; border-radius: var(--r4);
+  font-size: var(--tx-sm); font-weight: 600; letter-spacing: .2px;
+  box-shadow: var(--sh3); z-index: 9999; pointer-events: none;
+  opacity: 0; transition: opacity .2s, transform .2s;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: oklch(45% 0.16 22); }
+.toast.warn  { background: oklch(55% 0.16 60); }
+
+/* ── STORAGE WARNING ─────────────────────────────────────── */
+.storage-warn {
+  display: none; background: oklch(97% 0.04 72);
+  border-radius: var(--r2); padding: var(--sp3) var(--sp4);
+  font-size: var(--tx-sm); color: oklch(42% 0.12 55);
+  margin-bottom: var(--sp4);
+}
+.storage-warn.show { display: flex; align-items: flex-start; gap: var(--sp3); }
+
+/* ── LOGIN SCREEN ────────────────────────────────────────── */
+.login-screen {
+  display: none; position: fixed; inset: 0; z-index: 600;
+  background: var(--s1);
+  align-items: center; justify-content: center;
+  padding: var(--sp6);
+}
+.login-screen.show { display: flex; }
+.login-box { width: 100%; max-width: 340px; text-align: center; }
+.login-logo {
+  font-family: var(--f-display); font-size: 3.8rem;
+  font-weight: 900; color: var(--t1); letter-spacing: -1px; line-height: 1;
+  margin-bottom: var(--sp2);
+}
+.login-sub {
+  font-size: var(--tx-xs); color: var(--t3);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  font-weight: 600; margin-bottom: var(--sp8);
+}
+.login-form { display: flex; flex-direction: column; gap: var(--sp3); }
+.login-input {
+  padding: 12px 16px; border-radius: var(--r2);
+  border: 1.5px solid var(--border); background: var(--s0);
+  font-family: var(--f-body); font-size: var(--tx-base); color: var(--t1);
+  outline: none; text-align: center; transition: border-color .15s;
+}
+.login-input:focus { border-color: var(--ac); }
+.login-btn {
+  padding: 12px; background: var(--t1); color: oklch(99% 0 0);
+  border: none; border-radius: var(--r2);
+  font-family: var(--f-display); font-size: var(--tx-lg); font-weight: 800;
+  letter-spacing: .5px; cursor: pointer; transition: opacity .15s;
+}
+.login-btn:hover { opacity: .85; }
+.login-btn:disabled { opacity: .5; cursor: not-allowed; }
+.login-msg {
+  margin-top: var(--sp5); font-size: var(--tx-sm); color: var(--t2);
+  min-height: 20px; font-style: italic; line-height: 1.5;
+}
+.login-msg.ok  { color: oklch(42% 0.14 148); font-style: normal; font-weight: 500; }
+.login-msg.err { color: oklch(45% 0.16 22);  font-style: normal; }
+
+/* ── USER CHIP (topbar) ──────────────────────────────────── */
+.user-chip {
+  display: none; align-items: center; gap: var(--sp2);
+  padding: 5px 10px; border-radius: var(--r4);
+  background: oklch(99% 0 0 / .08);
+}
+.user-chip.show { display: flex; }
+.user-name { font-size: var(--tx-xs); color: oklch(75% 0.04 76); font-weight: 500; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-logout {
+  background: none; border: none; cursor: pointer;
+  font-size: var(--tx-xs); color: oklch(55% 0.04 76);
+  padding: 2px 6px; border-radius: var(--r1); transition: color .15s;
+  font-family: var(--f-body); font-weight: 600;
+}
+.btn-logout:hover { color: oklch(99% 0 0); }
+
 /* ── DIVIDER ─────────────────────────────────────────────── */
 .div { height: 1px; background: var(--border); margin: var(--sp5) 0; }
 
@@ -639,6 +721,20 @@ a { color: inherit; text-decoration: none; }
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">Diario de Café</div>
+    <div class="login-sub">Carla · Acceso personal</div>
+    <form class="login-form" onsubmit="loginConEmail(event)">
+      <input class="login-input" id="loginEmail" type="email"
+             placeholder="tu@email.com" autocomplete="email" required>
+      <button class="login-btn" id="loginBtn" type="submit">Entrar</button>
+    </form>
+    <div class="login-msg" id="loginMsg"></div>
+  </div>
+</div>
+
 <!-- TOPBAR -->
 <nav class="topbar">
   <div class="brand">
@@ -656,12 +752,26 @@ a { color: inherit; text-decoration: none; }
       <span class="ti">📊</span><span class="tl">Estadísticas</span>
     </button>
   </div>
+  <div class="user-chip" id="userChip">
+    <span class="user-name" id="userName"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
 </nav>
+
+<div id="toast" class="toast"></div>
 
 <div class="page">
 
   <!-- ═══ INVENTARIO ═══ -->
   <div class="tab-panel active" id="panel-inventario">
+    <div class="storage-warn" id="storageWarn">
+      <span>⚠️</span>
+      <div>
+        <strong>Los cambios no se guardarán</strong> — estás en modo privado o abriendo el archivo desde Dropbox.
+        Para que persistan, abre la app desde <strong>Safari en modo normal</strong> en
+        <strong>cmonroyrivas.github.io/coffee</strong> y guárdala en tu pantalla de inicio.
+      </div>
+    </div>
     <div class="action-row">
       <button class="btn btn-accent" onclick="abrirFormNuevo()">＋ Agregar Café</button>
       <button class="btn btn-ghost" onclick="exportar()">↓ Exportar</button>
@@ -898,6 +1008,13 @@ a { color: inherit; text-decoration: none; }
 
 <script>
 /* ═══════════════════════════════════════════════════════════
+   SUPABASE
+══════════════════════════════════════════════════════════ */
+const SUPA_URL = 'https://aszoozagouzoevnnqcqc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzem9vemFnb3V6b2V2bm5xY3FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDM5MzQsImV4cCI6MjA5NTQxOTkzNH0.i53JarILe53fntBQw7p8rqZcw7rAXp5kUsHxzw9TrqU';
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+/* ═══════════════════════════════════════════════════════════
    MOLINOS — settings verificados por fuentes oficiales y reviews
    C3: ~83 µm/click · Whirly 01S: 30 ajustes, ~25 µm/ajuste (eléctrico)
 ══════════════════════════════════════════════════════════ */
@@ -1035,16 +1152,120 @@ let cafes = [];
 let cafeDetalleActual = null;
 
 /* ═══════════════════════════════════════════════════════════
-   STORAGE
+   STORAGE — Supabase (nube) + localStorage (caché local)
 ══════════════════════════════════════════════════════════ */
-function cargar() {
+async function cargarDesdeSupabase() {
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return;
+
+  /* Intentar caché local primero para carga rápida */
   try {
     const raw = localStorage.getItem('diario_cafe_v2');
-    cafes = raw ? JSON.parse(raw) : INIT;
-  } catch { cafes = INIT; }
-  if (!localStorage.getItem('diario_cafe_v2')) guardar();
+    if (raw) { cafes = JSON.parse(raw); poblarFiltros(); filtrar(); }
+  } catch {}
+
+  /* Luego cargar desde Supabase (fuente de verdad) */
+  const { data, error } = await supa
+    .from('user_data')
+    .select('cafes')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    mostrarToast('⚠ Error al cargar datos', true);
+    if (!cafes.length) { cafes = [...INIT]; }
+  } else if (data) {
+    cafes = data.cafes || [];
+    /* Sync caché local */
+    try { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); } catch {}
+  } else {
+    /* Primera vez — guardar datos iniciales */
+    cafes = [...INIT];
+    await guardarEnSupabase();
+  }
+  poblarFiltros(); filtrar(); renderGuia(); generarIcono();
 }
-function guardar() { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); }
+
+async function guardarEnSupabase() {
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return;
+  const { error } = await supa.from('user_data').upsert({
+    user_id: user.id,
+    cafes: cafes,
+    updated_at: new Date().toISOString()
+  });
+  if (error) throw error;
+}
+
+function guardar() {
+  /* Actualizar caché local inmediatamente */
+  try { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); } catch {}
+  /* Guardar en Supabase en segundo plano */
+  guardarEnSupabase()
+    .then(() => mostrarToast('✓ Guardado'))
+    .catch(() => mostrarToast('⚠ Sin conexión — cambios solo locales', true));
+}
+
+function mostrarToast(msg, esError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (esError ? ' error' : '');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), esError ? 4000 : 1800);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTH — magic link por email
+══════════════════════════════════════════════════════════ */
+async function loginConEmail(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const btn   = document.getElementById('loginBtn');
+  const msg   = document.getElementById('loginMsg');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+  const { error } = await supa.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: 'https://cmonroyrivas.github.io/coffee/' }
+  });
+  btn.disabled = false;
+  btn.textContent = 'Entrar';
+  if (error) {
+    msg.className = 'login-msg err';
+    msg.textContent = 'Error: ' + error.message;
+  } else {
+    msg.className = 'login-msg ok';
+    msg.textContent = '✓ Revisa tu email — te enviamos un link de acceso. Puedes cerrar esta pestaña.';
+  }
+}
+
+async function logout() {
+  await supa.auth.signOut();
+  try { localStorage.removeItem('diario_cafe_v2'); } catch {}
+  cafes = [];
+}
+
+function mostrarApp(logueada) {
+  document.getElementById('loginScreen').classList.toggle('show', !logueada);
+}
+
+/* Escuchar cambios de sesión (login, logout, refresh automático) */
+supa.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    mostrarApp(true);
+    const nombre = session.user.email.split('@')[0];
+    document.getElementById('userName').textContent = nombre;
+    document.getElementById('userChip').classList.add('show');
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      await cargarDesdeSupabase();
+    }
+  } else {
+    mostrarApp(false);
+    document.getElementById('userChip').classList.remove('show');
+    cafes = [];
+    renderInventario([]);
+  }
+});
 
 /* ═══════════════════════════════════════════════════════════
    NAVEGACIÓN
@@ -1701,9 +1922,11 @@ function generarIcono() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   INIT
+   INIT — la sesión activa dispara onAuthStateChange automáticamente
 ══════════════════════════════════════════════════════════ */
-cargar(); poblarFiltros(); filtrar(); renderGuia(); generarIcono();
+generarIcono();
+/* Mostrar login por defecto hasta que Supabase confirme sesión */
+mostrarApp(false);
 </script>
 </body>
 </html>
