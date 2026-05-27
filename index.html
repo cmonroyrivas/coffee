@@ -808,6 +808,7 @@ a { color: inherit; text-decoration: none; }
       <button class="btn btn-ghost" onclick="exportar()">↓ Exportar</button>
       <button class="btn btn-ghost" onclick="importarClick()">↑ Importar</button>
       <input type="file" id="importInput" accept=".json" style="display:none" onchange="importar(event)">
+      <button class="btn btn-ghost" onclick="logout()" style="margin-left:auto">Salir</button>
     </div>
 
     <div class="search-wrap">
@@ -1186,34 +1187,45 @@ let cafeDetalleActual = null;
    STORAGE — Supabase (nube) + localStorage (caché local)
 ══════════════════════════════════════════════════════════ */
 async function cargarDesdeSupabase() {
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return;
-
-  /* Intentar caché local primero para carga rápida */
+  /* 1. Caché local — carga instantánea */
   try {
     const raw = localStorage.getItem('diario_cafe_v2');
     if (raw) { cafes = JSON.parse(raw); poblarFiltros(); filtrar(); }
   } catch {}
 
-  /* Luego cargar desde Supabase (fuente de verdad) */
-  const { data, error } = await supa
-    .from('user_data')
-    .select('cafes')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  /* 2. Supabase — fuente de verdad */
+  try {
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) throw new Error('no_user');
 
-  if (error) {
-    mostrarToast('⚠ Error al cargar datos', true);
-    if (!cafes.length) { cafes = [...INIT]; }
-  } else if (data) {
-    cafes = data.cafes || [];
-    /* Sync caché local */
-    try { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); } catch {}
-  } else {
-    /* Primera vez — guardar datos iniciales */
-    cafes = [...INIT];
-    await guardarEnSupabase();
+    const { data, error } = await supa
+      .from('user_data')
+      .select('cafes')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data && data.cafes?.length) {
+      cafes = data.cafes;
+      try { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); } catch {}
+    } else {
+      /* Primera vez o tabla vacía — cargar INIT y guardar */
+      if (!cafes.length) cafes = [...INIT];
+      guardarEnSupabase().catch(() => {}); /* best-effort */
+    }
+  } catch (e) {
+    /* Supabase no disponible — usar caché o INIT */
+    if (!cafes.length) {
+      cafes = [...INIT];
+      mostrarToast('Sin datos en nube — mostrando catálogo inicial', false);
+    }
+    if (e?.code === '42P01') {
+      /* Tabla no existe */
+      mostrarToast('⚠ Crea la tabla user_data en Supabase SQL Editor', true);
+    }
   }
+
   poblarFiltros(); filtrar(); renderGuia(); generarIcono();
 }
 
@@ -1260,7 +1272,11 @@ async function pedirCodigo(e) {
   btn.disabled = false; btn.textContent = 'Enviar código';
   if (error) {
     msg.className = 'login-msg err';
-    msg.textContent = error.message;
+    if (error.message.toLowerCase().includes('rate limit')) {
+      msg.textContent = 'Demasiados intentos — espera unos minutos e intenta de nuevo.';
+    } else {
+      msg.textContent = error.message;
+    }
   } else {
     _otpEmail = email;
     msg.className = ''; msg.textContent = '';
@@ -1297,9 +1313,12 @@ function volverPaso1() {
 }
 
 async function logout() {
-  await supa.auth.signOut();
-  try { localStorage.removeItem('diario_cafe_v2'); } catch {}
+  /* Cerrar sesión explícitamente sin esperar onAuthStateChange */
+  mostrarApp(false);
+  document.getElementById('userChip').classList.remove('show');
   cafes = [];
+  try { localStorage.removeItem('diario_cafe_v2'); } catch {}
+  try { await supa.auth.signOut(); } catch {}
 }
 
 function mostrarApp(logueada) {
