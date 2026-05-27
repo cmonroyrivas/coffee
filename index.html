@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diario de Café · Carla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Geologica:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  /* Surfaces — warm cream, OKLCH-tinted toward coffee hue */
+  --s0: oklch(98%  0.010 76);
+  --s1: oklch(95%  0.020 76);
+  --s2: oklch(91%  0.027 76);
+  --s3: oklch(86%  0.030 76);
+  --border: oklch(82% 0.026 76);
+
+  /* Text */
+  --t1: oklch(22%  0.055 50);
+  --t2: oklch(40%  0.065 50);
+  --t3: oklch(60%  0.048 55);
+
+  /* Accent — terracotta/sienna */
+  --ac:  oklch(53%  0.175 43);
+  --ac2: oklch(47%  0.175 43);
+  --ac-light: oklch(93% 0.040 50);
+
+  /* Gold — ratings */
+  --gold: oklch(74% 0.155 72);
+  --gold-2: oklch(85% 0.12 76);
+
+  /* Process identity colors */
+  --p-lavado:      oklch(56% 0.195 238);
+  --p-natural:     oklch(57% 0.195 29);
+  --p-honey:       oklch(68% 0.170 72);
+  --p-anaer:       oklch(52% 0.215 302);
+  --p-fermentado:  oklch(58% 0.205 338);
+  --p-despulpado:  oklch(52% 0.180 152);
+  --p-blend:       oklch(48% 0.060 52);
+  --p-default:     oklch(50% 0.055 52);
+
+  /* Process text — white works for all dark enough process colors */
+  --p-text: oklch(99% 0 0);
+  --p-honey-text: oklch(25% 0.06 52);
+
+  /* Type scale */
+  --tx-xs:   0.68rem;
+  --tx-sm:   0.80rem;
+  --tx-base: 0.91rem;
+  --tx-md:   1.05rem;
+  --tx-lg:   1.25rem;
+  --tx-xl:   1.55rem;
+  --tx-2xl:  2.10rem;
+  --tx-3xl:  3.00rem;
+
+  /* Space scale (4pt) */
+  --sp1: 4px; --sp2: 8px; --sp3: 12px; --sp4: 16px;
+  --sp5: 20px; --sp6: 24px; --sp8: 32px; --sp10: 40px; --sp12: 48px;
+
+  /* Radius */
+  --r1: 5px; --r2: 9px; --r3: 14px; --r4: 20px;
+
+  /* Shadow */
+  --sh1: 0 1px 2px oklch(22% 0.055 50 / .05), 0 2px 8px oklch(22% 0.055 50 / .04);
+  --sh2: 0 2px 6px oklch(22% 0.055 50 / .07), 0 6px 20px oklch(22% 0.055 50 / .06);
+  --sh3: 0 6px 24px oklch(22% 0.055 50 / .12), 0 2px 4px oklch(22% 0.055 50 / .08);
+
+  /* Fonts */
+  --f-display: 'Big Shoulders Display', system-ui, sans-serif;
+  --f-body:    'Geologica', system-ui, sans-serif;
+}
+
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--f-body); background: var(--s1); color: var(--t1); min-height: 100vh; }
+button, input, select, textarea { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ── TOPBAR ──────────────────────────────────────────────── */
+.topbar {
+  background: var(--t1);
+  padding: 0 var(--sp6);
+  display: flex; align-items: center; justify-content: space-between;
+  height: 54px; position: sticky; top: 0; z-index: 200;
+}
+.brand {
+  display: flex; align-items: baseline; gap: var(--sp2);
+  font-family: var(--f-display); font-weight: 800;
+  color: oklch(99% 0 0);
+}
+.brand-main { font-size: 1.45rem; letter-spacing: .5px; line-height: 1; }
+.brand-sub  {
+  font-size: var(--tx-xs); font-weight: 500; letter-spacing: 2px;
+  text-transform: uppercase; color: oklch(72% 0.09 76); font-family: var(--f-body);
+}
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  background: none; border: none; cursor: pointer;
+  color: oklch(68% 0.05 76); padding: 6px 14px;
+  font-family: var(--f-body); font-size: var(--tx-sm); font-weight: 500;
+  border-radius: var(--r1); transition: color .18s, background .18s;
+  letter-spacing: .3px;
+}
+.nav-tab:hover { color: oklch(92% 0.03 76); background: oklch(99% 0 0 / .06); }
+.nav-tab.active {
+  color: var(--gold-2); background: oklch(99% 0 0 / .10);
+  font-weight: 600;
+}
+.nav-tab .ti { margin-right: 5px; }
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+.page { max-width: 1300px; margin: 0 auto; padding: var(--sp6) var(--sp5); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp .22s ease-out; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── ACTION ROW ──────────────────────────────────────────── */
+.action-row { display: flex; gap: var(--sp2); margin-bottom: var(--sp5); flex-wrap: wrap; }
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--sp2);
+  padding: 8px 18px; border: none; border-radius: var(--r2);
+  font-size: var(--tx-sm); font-weight: 600; cursor: pointer;
+  transition: transform .12s, box-shadow .12s, background .15s;
+  white-space: nowrap; line-height: 1.3;
+}
+.btn:active { transform: scale(.97); }
+.btn-accent  { background: var(--ac); color: oklch(99% 0 0); }
+.btn-accent:hover { background: var(--ac2); box-shadow: var(--sh1); }
+.btn-ghost {
+  background: var(--s0); color: var(--t2);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.btn-ghost:hover { background: var(--s2); color: var(--t1); }
+.btn-sm { padding: 5px 12px; font-size: var(--tx-xs); }
+.btn-danger { background: oklch(92% 0.04 22); color: oklch(45% 0.16 22); }
+.btn-danger:hover { background: oklch(45% 0.16 22); color: oklch(99% 0 0); }
+.btn-success { background: oklch(92% 0.06 148); color: oklch(40% 0.14 148); }
+.btn-success:hover { background: oklch(40% 0.14 148); color: oklch(99% 0 0); }
+
+/* ── SEARCH & FILTERS ───────────────────────────────────── */
+.search-wrap {
+  background: var(--s0); border-radius: var(--r3); padding: var(--sp4) var(--sp5);
+  margin-bottom: var(--sp5);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+}
+.search-field-row { display: flex; gap: var(--sp2); margin-bottom: var(--sp4); align-items: center; }
+.search-field {
+  flex: 1; min-width: 180px;
+  padding: 9px 14px; border-radius: var(--r2);
+  background: var(--s1); border: 1.5px solid var(--border);
+  font-size: var(--tx-base); color: var(--t1); outline: none;
+  transition: border-color .15s;
+}
+.search-field:focus { border-color: var(--ac); background: var(--s0); }
+.search-field::placeholder { color: var(--t3); }
+
+/* Estado tabs */
+.estado-bar { display: flex; gap: var(--sp1); margin-bottom: var(--sp4); flex-wrap: wrap; }
+.etab {
+  padding: 6px 14px; border-radius: var(--r4); border: none; cursor: pointer;
+  font-size: var(--tx-sm); font-weight: 600; color: var(--t3);
+  background: var(--s2); transition: all .15s;
+}
+.etab:hover { background: var(--s3); color: var(--t2); }
+.etab.active { background: var(--t1); color: oklch(99% 0 0); }
+.etab-ct { font-size: var(--tx-xs); opacity: .7; margin-left: 3px; }
+
+/* Filter chips */
+.qf-section { margin-bottom: var(--sp3); }
+.qf-lbl {
+  font-size: var(--tx-xs); font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--t3); display: block;
+  margin-bottom: var(--sp2);
+}
+.qf-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.qf-chip {
+  padding: 5px 13px; border-radius: var(--r4); border: 1.5px solid var(--border);
+  font-size: var(--tx-sm); font-weight: 600; cursor: pointer;
+  background: var(--s1); color: var(--t2);
+  transition: all .15s; white-space: nowrap;
+}
+.qf-chip:hover { border-color: var(--t3); color: var(--t1); }
+.qf-chip.active {
+  background: var(--t1); color: oklch(99% 0 0);
+  border-color: var(--t1);
+}
+/* Process chips keep process color when active */
+.qf-chip.pc-active-lavado     { background: var(--p-lavado);     border-color: var(--p-lavado);     color: oklch(99% 0 0); }
+.qf-chip.pc-active-natural    { background: var(--p-natural);    border-color: var(--p-natural);    color: oklch(99% 0 0); }
+.qf-chip.pc-active-honey      { background: var(--p-honey);      border-color: var(--p-honey);      color: var(--p-honey-text); }
+.qf-chip.pc-active-anaer      { background: var(--p-anaer);      border-color: var(--p-anaer);      color: oklch(99% 0 0); }
+.qf-chip.pc-active-fermentado { background: var(--p-fermentado); border-color: var(--p-fermentado); color: oklch(99% 0 0); }
+.qf-chip.pc-active-despulpado { background: var(--p-despulpado); border-color: var(--p-despulpado); color: oklch(99% 0 0); }
+.qf-chip.pc-active-blend      { background: var(--p-blend);      border-color: var(--p-blend);      color: oklch(99% 0 0); }
+.qf-chip.pc-active-default    { background: var(--p-default);    border-color: var(--p-default);    color: oklch(99% 0 0); }
+
+/* Quick toggles row */
+.qf-toggles { display: flex; gap: var(--sp2); flex-wrap: wrap; align-items: center; padding-top: var(--sp3); margin-top: var(--sp3); }
+.qtoggle {
+  display: flex; align-items: center; gap: var(--sp1);
+  padding: 5px 13px; border-radius: var(--r4); border: 1.5px solid var(--border);
+  font-size: var(--tx-sm); font-weight: 600; cursor: pointer;
+  background: var(--s1); color: var(--t3); transition: all .15s;
+}
+.qtoggle:hover { border-color: var(--t3); color: var(--t2); }
+.qtoggle.active { background: oklch(92% 0.06 148); color: oklch(40% 0.14 148); border-color: oklch(75% 0.10 148); }
+.rstar-row { display: flex; gap: 2px; }
+.rstar {
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; color: var(--s3); transition: color .1s;
+  padding: 3px 2px; line-height: 1;
+}
+.rstar.active { color: var(--gold); }
+.filter-count {
+  margin-left: auto; font-size: var(--tx-xs); font-weight: 700;
+  color: var(--ac); background: var(--ac-light);
+  padding: 3px 9px; border-radius: var(--r4);
+  display: none;
+}
+.filter-count.show { display: block; }
+.btn-clear-all {
+  padding: 5px 13px; background: none; border: 1.5px solid var(--border);
+  border-radius: var(--r4); font-size: var(--tx-sm); color: var(--t3);
+  cursor: pointer; font-weight: 600; transition: all .15s;
+}
+.btn-clear-all:hover { border-color: var(--ac); color: var(--ac); }
+
+/* Grinder toggle — recipe section */
+.grinder-bar {
+  display: flex; align-items: center; gap: var(--sp3);
+  margin-bottom: var(--sp5); background: var(--s1);
+  border-radius: var(--r3); padding: var(--sp3) var(--sp4);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.grinder-bar-lbl { font-size: var(--tx-sm); font-weight: 600; color: var(--t2); white-space: nowrap; }
+.gtab {
+  padding: 6px 16px; border-radius: var(--r2); border: 1.5px solid var(--border);
+  font-size: var(--tx-sm); font-weight: 700; cursor: pointer;
+  background: var(--s0); color: var(--t3); transition: all .15s;
+}
+.gtab:hover { color: var(--t1); border-color: var(--t3); }
+.gtab.active { background: var(--t1); color: oklch(99% 0 0); border-color: var(--t1); }
+.grinder-desc { font-size: var(--tx-xs); color: var(--t3); }
+
+/* ── STATS MINI ──────────────────────────────────────────── */
+.stats-mini { display: flex; gap: var(--sp3); margin-bottom: var(--sp5); flex-wrap: wrap; }
+.stat-chip {
+  background: var(--s0); border-radius: var(--r2);
+  padding: var(--sp3) var(--sp4);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+  display: flex; align-items: baseline; gap: var(--sp2);
+  min-width: 110px;
+}
+.stat-chip .val {
+  font-family: var(--f-display); font-size: var(--tx-2xl);
+  font-weight: 900; color: var(--t1); line-height: 1;
+}
+.stat-chip .meta { display: flex; flex-direction: column; gap: 1px; }
+.stat-chip .lbl  { font-size: var(--tx-xs); font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
+.stat-chip .sub  { font-size: var(--tx-xs); color: var(--t3); }
+
+/* ── CAFÉ GRID ───────────────────────────────────────────── */
+.cafe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(282px, 1fr));
+  gap: var(--sp4);
+}
+.empty-state {
+  grid-column: 1/-1; text-align: center; padding: 64px var(--sp6);
+  color: var(--t3);
+}
+.empty-icon { font-size: 2.8rem; margin-bottom: var(--sp3); }
+.empty-state p { font-size: var(--tx-md); }
+.empty-state small { font-size: var(--tx-sm); margin-top: 6px; display: block; }
+
+/* ── CAFÉ CARD ───────────────────────────────────────────── */
+.cafe-card {
+  background: var(--s0); border-radius: var(--r3);
+  overflow: hidden;
+  box-shadow: var(--sh1), inset 0 0 0 1px var(--border);
+  transition: transform .2s cubic-bezier(.22,.68,0,1.2), box-shadow .2s ease;
+  display: flex; flex-direction: column;
+  animation: fadeUp .28s ease-out both;
+}
+.cafe-card:hover { transform: translateY(-3px); box-shadow: var(--sh2), inset 0 0 0 1px var(--border); }
+
+/* Process zone — full color header, NOT a border */
+.card-zone {
+  padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  min-height: 44px;
+}
+.zone-process {
+  font-family: var(--f-display); font-size: var(--tx-sm);
+  font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+  color: var(--p-text);
+}
+.zone-recompra {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: oklch(99% 0 0 / .20); border: 1.5px solid oklch(99% 0 0 / .30);
+  color: oklch(99% 0 0 / .70); cursor: pointer;
+  font-size: .85rem; display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s; flex-shrink: 0;
+}
+.zone-recompra.on { background: oklch(99% 0 0 / .90); color: var(--ac); }
+.zone-recompra:hover { background: oklch(99% 0 0 / .35); }
+
+/* Card body */
+.card-body { padding: var(--sp4); flex: 1; display: flex; flex-direction: column; gap: var(--sp3); }
+.coffee-name {
+  font-family: var(--f-display); font-size: var(--tx-xl);
+  font-weight: 800; color: var(--t1); line-height: 1.1;
+  letter-spacing: -.2px;
+}
+.coffee-origin { font-size: var(--tx-sm); color: var(--t2); line-height: 1.3; }
+
+.card-details {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+.card-det { display: flex; flex-direction: column; gap: 1px; }
+.card-det .dl { font-size: var(--tx-xs); font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .8px; }
+.card-det .dv { font-size: var(--tx-sm); color: var(--t1); }
+
+.flavor-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.flavor-tag {
+  background: var(--s2); color: var(--t2);
+  padding: 3px 8px; border-radius: var(--r4);
+  font-size: var(--tx-xs); font-weight: 500;
+}
+
+.card-rating { display: flex; align-items: center; gap: var(--sp2); }
+.stars-row { display: flex; gap: 2px; }
+.star-icon { font-size: 1rem; color: var(--s3); transition: color .1s; }
+.star-icon.lit { color: var(--gold); }
+.rating-score { font-size: var(--tx-sm); color: var(--t3); font-weight: 500; }
+
+.recompra-label {
+  font-size: var(--tx-xs); font-weight: 600; color: oklch(44% 0.14 148);
+  background: oklch(92% 0.06 148); padding: 3px 9px; border-radius: var(--r4);
+  letter-spacing: .3px;
+}
+.sca-pill {
+  font-size: var(--tx-xs); font-weight: 600; color: var(--ac);
+  background: var(--ac-light); padding: 3px 9px; border-radius: var(--r4);
+}
+
+.card-actions {
+  display: flex; gap: var(--sp2); margin-top: auto; padding-top: var(--sp3);
+  border-top: 1px solid var(--s2);
+}
+.card-actions .btn { flex: 1; justify-content: center; }
+
+/* Process color map */
+.pc-lavado     { background: var(--p-lavado); }
+.pc-natural    { background: var(--p-natural); }
+.pc-honey      { background: var(--p-honey); }
+.pc-honey .zone-process { color: var(--p-honey-text); }
+.pc-honey .zone-recompra { border-color: oklch(25% 0.06 52 / .3); color: oklch(25% 0.06 52 / .5); background: oklch(25% 0.06 52 / .10); }
+.pc-honey .zone-recompra.on { background: oklch(25% 0.06 52 / .85); color: var(--ac); }
+.pc-anaer      { background: var(--p-anaer); }
+.pc-fermentado { background: var(--p-fermentado); }
+.pc-despulpado { background: var(--p-despulpado); }
+.pc-blend      { background: var(--p-blend); }
+.pc-default    { background: var(--p-default); }
+
+/* ── MODALS ──────────────────────────────────────────────── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: oklch(15% 0.04 52 / .55);
+  z-index: 300; align-items: flex-start; justify-content: center;
+  padding: var(--sp6) var(--sp4); overflow-y: auto;
+  backdrop-filter: blur(3px);
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--s0); border-radius: var(--r3);
+  width: 100%; max-width: 620px; margin: auto;
+  box-shadow: var(--sh3); overflow: hidden;
+  animation: modalIn .22s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-lg { max-width: 800px; }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--sp5) var(--sp6); background: var(--s1);
+  border-bottom: 1px solid var(--border);
+}
+.modal-title {
+  font-family: var(--f-display); font-size: var(--tx-xl);
+  font-weight: 800; color: var(--t1); letter-spacing: -.2px;
+}
+.modal-x {
+  width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: var(--s2); cursor: pointer; color: var(--t2); font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.modal-x:hover { background: var(--s3); color: var(--t1); }
+
+.modal-tabs-bar {
+  display: flex; background: var(--s1); border-bottom: 1.5px solid var(--border);
+  padding: 0 var(--sp6);
+}
+.mtab {
+  padding: 11px 15px; background: none; border: none;
+  font-size: var(--tx-sm); font-weight: 500; color: var(--t3);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px; transition: color .15s;
+  letter-spacing: .2px;
+}
+.mtab:hover { color: var(--t2); }
+.mtab.active { color: var(--ac); border-bottom-color: var(--ac); font-weight: 600; }
+.mtab-panel { display: none; }
+.mtab-panel.active { display: block; animation: fadeUp .18s ease-out; }
+
+.modal-body { padding: var(--sp6); max-height: 68vh; overflow-y: auto; }
+.modal-foot {
+  display: flex; gap: var(--sp2); justify-content: flex-end;
+  padding: var(--sp4) var(--sp6); background: var(--s1);
+  border-top: 1px solid var(--border);
+}
+
+/* ── FORMS ───────────────────────────────────────────────── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp4); }
+.form-grid .full { grid-column: 1 / -1; }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg label { font-size: var(--tx-sm); font-weight: 600; color: var(--t2); }
+.fg input, .fg select, .fg textarea {
+  padding: 9px 12px; border-radius: var(--r2);
+  border: 1.5px solid var(--border); background: var(--s1);
+  font-size: var(--tx-base); color: var(--t1); outline: none;
+  transition: border-color .15s, background .15s;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--ac); background: var(--s0);
+}
+.fg textarea { resize: vertical; min-height: 68px; }
+.chk-row { display: flex; align-items: center; gap: var(--sp2); padding: 6px 0; }
+.chk-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--ac); cursor: pointer; }
+.chk-row label { font-size: var(--tx-base); color: var(--t1); cursor: pointer; }
+
+/* Star rating input */
+.rating-inp { display: flex; align-items: center; gap: var(--sp3); }
+.star-btns { display: flex; gap: 3px; }
+.s-btn {
+  background: none; border: none; font-size: 1.7rem; cursor: pointer;
+  color: var(--s3); transition: color .1s, transform .1s; line-height: 1;
+}
+.s-btn:hover, .s-btn.on { color: var(--gold); transform: scale(1.1); }
+.s-score { font-size: var(--tx-sm); color: var(--t3); min-width: 36px; }
+
+/* ── DETAIL VIEW ─────────────────────────────────────────── */
+.det-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px 24px; margin-bottom: var(--sp5);
+}
+.det-field .dl {
+  font-size: var(--tx-xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--t3); margin-bottom: 2px;
+}
+.det-field .dv { font-size: var(--tx-base); color: var(--t1); }
+
+.sec-hd {
+  font-size: var(--tx-xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--t3); margin-bottom: var(--sp3);
+  display: flex; align-items: center; gap: var(--sp3);
+}
+.sec-hd::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Recipe cards */
+.rec-banner {
+  background: var(--s1); border-radius: var(--r2);
+  padding: var(--sp4); margin-bottom: var(--sp4);
+  display: flex; flex-direction: column; gap: var(--sp2);
+}
+.rec-badge {
+  display: inline-flex; align-items: center; gap: var(--sp2);
+  padding: 4px 12px; border-radius: var(--r4); font-size: var(--tx-sm);
+  font-weight: 700; color: var(--p-text); letter-spacing: .5px;
+  width: fit-content;
+}
+.rec-badge.honey-txt { color: var(--p-honey-text); }
+.rec-perfil {
+  font-family: var(--f-display); font-size: var(--tx-md);
+  font-weight: 700; color: var(--t1); letter-spacing: .3px;
+}
+.rec-char { font-size: var(--tx-sm); color: var(--t2); }
+
+.rec-tip {
+  background: oklch(96% 0.025 76); border-radius: var(--r2);
+  padding: var(--sp3) var(--sp4); margin-bottom: var(--sp4);
+  font-size: var(--tx-sm); color: var(--t2);
+  font-style: italic;
+}
+
+.metodo-block {
+  background: var(--s0); border-radius: var(--r2);
+  padding: var(--sp4); margin-bottom: var(--sp3);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.metodo-name {
+  font-family: var(--f-display); font-size: var(--tx-md);
+  font-weight: 700; color: var(--ac); margin-bottom: var(--sp3);
+  letter-spacing: .5px;
+}
+.metodo-params { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp3); margin-bottom: var(--sp3); }
+.mp .mpl { font-size: var(--tx-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--t3); }
+.mp .mpv { font-size: var(--tx-sm); font-weight: 600; color: var(--t1); }
+.metodo-razon { font-size: var(--tx-xs); color: var(--t3); padding-top: var(--sp2); border-top: 1px solid var(--s2); }
+.metodo-tecnica { font-size: var(--tx-xs); color: var(--t2); font-style: italic; margin-top: 3px; }
+
+/* My recipes list */
+.my-rec {
+  background: var(--s1); border-radius: var(--r2);
+  padding: var(--sp4); margin-bottom: var(--sp3);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.my-rec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp3); }
+.my-rec-method { font-family: var(--f-display); font-size: var(--tx-md); font-weight: 800; color: var(--t1); letter-spacing: .3px; }
+.my-rec-date { font-size: var(--tx-xs); color: var(--t3); }
+.my-rec-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: var(--sp2); margin-bottom: var(--sp2); }
+.mrp .mrl { font-size: var(--tx-xs); font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .6px; }
+.mrp .mrv { font-size: var(--tx-sm); color: var(--t1); font-weight: 500; }
+.my-rec-notes { font-size: var(--tx-sm); color: var(--t2); font-style: italic; padding-top: var(--sp2); border-top: 1px solid var(--s2); }
+
+/* Purchase history */
+.compra-row {
+  display: flex; align-items: center; gap: var(--sp4);
+  padding: var(--sp3) var(--sp4); background: var(--s1);
+  border-radius: var(--r2); margin-bottom: var(--sp2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.compra-dt { font-weight: 600; font-size: var(--tx-base); color: var(--t1); }
+.compra-sub { font-size: var(--tx-sm); color: var(--t3); }
+.compra-price {
+  font-family: var(--f-display); font-size: var(--tx-xl);
+  font-weight: 800; color: var(--ac); white-space: nowrap;
+}
+
+/* ── GUIDE TAB ───────────────────────────────────────────── */
+.guia-intro { margin-bottom: var(--sp6); }
+.guia-intro h2 {
+  font-family: var(--f-display); font-size: var(--tx-2xl);
+  font-weight: 900; color: var(--t1); margin-bottom: 6px;
+}
+.guia-intro p { font-size: var(--tx-base); color: var(--t2); max-width: 65ch; }
+
+.guia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: var(--sp4); }
+.guia-card { background: var(--s0); border-radius: var(--r3); overflow: hidden; box-shadow: var(--sh1), inset 0 0 0 1px var(--border); }
+.guia-card-zone { padding: var(--sp4) var(--sp5); }
+.guia-card-zone .process-lbl { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 900; color: var(--p-text); }
+.guia-card-zone .perfil-txt  { font-size: var(--tx-sm); color: oklch(99% 0 0 / .75); margin-top: 2px; }
+.guia-card-zone.honey-txt .process-lbl { color: var(--p-honey-text); }
+.guia-card-zone.honey-txt .perfil-txt  { color: oklch(25% 0.06 52 / .65); }
+.guia-card-body { padding: var(--sp4) var(--sp5); }
+.guia-tip { font-size: var(--tx-sm); color: var(--t2); font-style: italic; margin-bottom: var(--sp4); padding: var(--sp3); background: var(--s1); border-radius: var(--r1); }
+.guia-metodo { margin-bottom: var(--sp4); padding-bottom: var(--sp4); border-bottom: 1px solid var(--s2); }
+.guia-metodo:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.guia-metodo h4 { font-family: var(--f-display); font-size: var(--tx-base); font-weight: 700; color: var(--ac); margin-bottom: var(--sp2); letter-spacing: .5px; }
+.guia-params { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp2); margin-bottom: 6px; }
+.gp .gpl { font-size: var(--tx-xs); font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: .6px; }
+.gp .gpv { font-size: var(--tx-sm); font-weight: 600; color: var(--t1); }
+.guia-razon { font-size: var(--tx-xs); color: var(--t3); font-style: italic; }
+
+/* ── STATS TAB ───────────────────────────────────────────── */
+.stats-intro { margin-bottom: var(--sp6); }
+.stats-intro h2 {
+  font-family: var(--f-display); font-size: var(--tx-2xl);
+  font-weight: 900; color: var(--t1); margin-bottom: 6px;
+}
+.stats-intro p { font-size: var(--tx-base); color: var(--t2); }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp4); }
+.stats-card { background: var(--s0); border-radius: var(--r3); padding: var(--sp6); box-shadow: var(--sh1), inset 0 0 0 1px var(--border); }
+.stats-card-title {
+  font-size: var(--tx-xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--t3); margin-bottom: var(--sp5);
+}
+.bar-item { margin-bottom: var(--sp3); }
+.bar-lbl { display: flex; justify-content: space-between; font-size: var(--tx-sm); color: var(--t2); margin-bottom: 5px; }
+.bar-lbl span:last-child { color: var(--t3); font-size: var(--tx-xs); font-weight: 600; }
+.bar-track { height: 7px; background: var(--s2); border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--ac); border-radius: 99px; transition: width .5s cubic-bezier(.22,.68,0,1.2); }
+.top-item {
+  display: flex; align-items: center; gap: var(--sp3);
+  padding: var(--sp3) 0; border-bottom: 1px solid var(--s2);
+}
+.top-item:last-child { border-bottom: none; }
+.top-rank { font-family: var(--f-display); font-size: var(--tx-lg); font-weight: 900; color: var(--s3); min-width: 28px; }
+.top-name { flex: 1; font-size: var(--tx-sm); color: var(--t1); }
+.top-score { color: var(--gold); font-size: var(--tx-base); }
+
+.big-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--sp3); }
+.big-stat { text-align: center; padding: var(--sp4); background: var(--s1); border-radius: var(--r2); }
+.big-stat .bv { font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 900; color: var(--t1); line-height: 1; }
+.big-stat .bl { font-size: var(--tx-xs); font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+
+/* ── DIVIDER ─────────────────────────────────────────────── */
+.div { height: 1px; background: var(--border); margin: var(--sp5) 0; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .topbar { padding: 0 var(--sp4); height: 50px; }
+  .brand-main { font-size: 1.2rem; }
+  .nav-tab .ti { margin-right: 0; }
+  .nav-tab .tl { display: none; }
+  .nav-tab { padding: 6px 10px; font-size: var(--tx-xs); }
+  .page { padding: var(--sp4) var(--sp3); }
+  .cafe-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full { grid-column: 1; }
+  .det-grid { grid-template-columns: 1fr; }
+  .metodo-params { grid-template-columns: 1fr 1fr; }
+  .modal-body { padding: var(--sp4); }
+  .guia-grid { grid-template-columns: 1fr; }
+  .stats-mini { gap: var(--sp2); }
+  .stat-chip { min-width: 90px; padding: var(--sp2) var(--sp3); }
+  .stat-chip .val { font-size: var(--tx-xl); }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="brand">
+    <span class="brand-main">Diario de Café</span>
+    <span class="brand-sub">Carla</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-inventario" onclick="showTab('inventario')">
+      <span class="ti">☕</span><span class="tl">Inventario</span>
+    </button>
+    <button class="nav-tab" id="tab-recetas" onclick="showTab('recetas')">
+      <span class="ti">📋</span><span class="tl">Recetas</span>
+    </button>
+    <button class="nav-tab" id="tab-estadisticas" onclick="showTab('estadisticas')">
+      <span class="ti">📊</span><span class="tl">Estadísticas</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ═══ INVENTARIO ═══ -->
+  <div class="tab-panel active" id="panel-inventario">
+    <div class="action-row">
+      <button class="btn btn-accent" onclick="abrirFormNuevo()">＋ Agregar Café</button>
+      <button class="btn btn-ghost" onclick="exportar()">↓ Exportar</button>
+      <button class="btn btn-ghost" onclick="importarClick()">↑ Importar</button>
+      <input type="file" id="importInput" accept=".json" style="display:none" onchange="importar(event)">
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-field-row">
+        <input class="search-field" id="searchInput" placeholder="Buscar por nombre, tostador, finca, variedad, notas…" oninput="filtrar()">
+      </div>
+
+      <!-- Estado tabs -->
+      <div class="estado-bar">
+        <button class="etab active" data-est="" onclick="setEstado(this)">Todos <span class="etab-ct" id="ec-all"></span></button>
+        <button class="etab" data-est="Por probar" onclick="setEstado(this)">Por probar <span class="etab-ct" id="ec-pp"></span></button>
+        <button class="etab" data-est="Probado" onclick="setEstado(this)">Probado <span class="etab-ct" id="ec-pr"></span></button>
+        <button class="etab" data-est="Terminado" onclick="setEstado(this)">Terminado <span class="etab-ct" id="ec-te"></span></button>
+      </div>
+
+      <!-- Proceso chips -->
+      <div class="qf-section">
+        <span class="qf-lbl">Proceso</span>
+        <div class="qf-chips" id="procesosChips"></div>
+      </div>
+
+      <!-- País chips -->
+      <div class="qf-section">
+        <span class="qf-lbl">País</span>
+        <div class="qf-chips" id="paisChips"></div>
+      </div>
+
+      <!-- Quick toggles -->
+      <div class="qf-toggles">
+        <span class="qf-lbl" style="margin-bottom:0">Rating mínimo</span>
+        <div class="rstar-row" id="rstarRow">
+          <button class="rstar" data-r="1" onclick="setRatingMin(1)" title="1 estrella o más">★</button>
+          <button class="rstar" data-r="2" onclick="setRatingMin(2)" title="2 estrellas o más">★</button>
+          <button class="rstar" data-r="3" onclick="setRatingMin(3)" title="3 estrellas o más">★</button>
+          <button class="rstar" data-r="4" onclick="setRatingMin(4)" title="4 estrellas o más">★</button>
+          <button class="rstar" data-r="5" onclick="setRatingMin(5)" title="Solo 5 estrellas">★</button>
+        </div>
+        <button class="qtoggle" id="recompraToggle" onclick="toggleSoloRecompra()">♻ Solo recompra</button>
+        <button class="btn-clear-all" onclick="limpiarFiltros()">✕ Limpiar todo</button>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+    </div>
+
+    <div class="stats-mini" id="statsMini"></div>
+    <div class="cafe-grid" id="cafeGrid"></div>
+  </div>
+
+  <!-- ═══ RECETAS ═══ -->
+  <div class="tab-panel" id="panel-recetas">
+    <div class="guia-intro">
+      <h2>Guía de Recetas</h2>
+      <p>Parámetros ideales por tipo de proceso. Selecciona tu molino para ver los clicks exactos.</p>
+    </div>
+    <div class="grinder-bar">
+      <span class="grinder-bar-lbl">Molienda para:</span>
+      <button class="gtab active" id="gtab-C3" onclick="setGrinder('C3')">Timemore C3</button>
+      <button class="gtab" id="gtab-Whirly" onclick="setGrinder('Whirly')">Timemore Whirly 01S</button>
+      <span class="grinder-desc" id="grinderDesc">Manual · ~83 µm/click · 36 clicks total</span>
+    </div>
+    <div class="guia-grid" id="guiaGrid"></div>
+  </div>
+
+  <!-- ═══ ESTADÍSTICAS ═══ -->
+  <div class="tab-panel" id="panel-estadisticas">
+    <div class="stats-intro">
+      <h2>Mis Estadísticas</h2>
+      <p>Un vistazo a tu colección de cafés.</p>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ═══ MODAL: FORMULARIO CAFÉ ═══ -->
+<div class="overlay" id="modalForm">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="formTitle">Agregar Café</span>
+      <button class="modal-x" onclick="cerrarModal('modalForm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="cafeForm" onsubmit="guardarCafe(event)">
+        <div class="form-grid">
+          <div class="fg full"><label>Nombre del Café *</label><input id="fNombre" required placeholder="Ej: Perú Cajamarca"></div>
+          <div class="fg"><label>Tostador</label><input id="fTostador" placeholder="Ej: 202 Coffee Lab"></div>
+          <div class="fg"><label>País</label><input id="fPais" placeholder="Ej: Colombia"></div>
+          <div class="fg"><label>Región</label><input id="fRegion" placeholder="Ej: Huila"></div>
+          <div class="fg"><label>Finca / Productor</label><input id="fFinca" placeholder="Ej: Finca La Coipa"></div>
+          <div class="fg"><label>Variedad</label><input id="fVariedad" placeholder="Ej: Geisha, Caturra"></div>
+          <div class="fg"><label>Proceso</label>
+            <select id="fProceso">
+              <option>Lavado</option><option>Natural</option><option>Honey</option>
+              <option>Anaeróbico</option><option>Natural fermentado</option>
+              <option>Despulpado natural</option><option>Blend</option><option>Desconocido</option>
+            </select>
+          </div>
+          <div class="fg"><label>Altitud (msnm)</label><input id="fAltitud" placeholder="Ej: 1760"></div>
+          <div class="fg"><label>Puntaje SCA</label><input type="number" id="fSCA" step=".1" min="0" max="100" placeholder="Ej: 86.5"></div>
+          <div class="fg"><label>Estado</label>
+            <select id="fEstadoCafe"><option>Por probar</option><option>Probado</option><option>Terminado</option></select>
+          </div>
+          <div class="fg full"><label>Notas de Cata (separar con ;)</label><input id="fNotas" placeholder="Ej: caramelo; avellana; chocolate amargo"></div>
+          <div class="fg full"><label>Mi Calificación</label>
+            <div class="rating-inp">
+              <div class="star-btns" id="ratingInput">
+                <button type="button" class="s-btn" data-val="1" onclick="setRating(1)">★</button>
+                <button type="button" class="s-btn" data-val="2" onclick="setRating(2)">★</button>
+                <button type="button" class="s-btn" data-val="3" onclick="setRating(3)">★</button>
+                <button type="button" class="s-btn" data-val="4" onclick="setRating(4)">★</button>
+                <button type="button" class="s-btn" data-val="5" onclick="setRating(5)">★</button>
+              </div>
+              <span class="s-score" id="ratingVal">3 / 5</span>
+              <input type="hidden" id="fResultado" value="3">
+            </div>
+          </div>
+          <div class="fg full"><div class="chk-row"><input type="checkbox" id="fRecompra"><label for="fRecompra">✓ ¿Lo volvería a comprar?</label></div></div>
+          <div class="fg"><label>Precio (CLP)</label><input type="number" id="fPrecio" step="100" placeholder="Ej: 9990"></div>
+          <div class="fg"><label>Fecha de Compra</label><input type="date" id="fFecha"></div>
+          <div class="fg full"><label>Observaciones</label><textarea id="fObs" placeholder="Notas personales, recuerdos, contexto…"></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:var(--sp2);margin-top:var(--sp5);">
+          <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalForm')">Cancelar</button>
+          <button type="submit" class="btn btn-accent">Guardar Café</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DETALLE CAFÉ ═══ -->
+<div class="overlay" id="modalDetalle">
+  <div class="modal modal-lg">
+    <div class="modal-head" id="detalleHeader">
+      <span class="modal-title" id="detalleTitulo"></span>
+      <button class="modal-x" onclick="cerrarModal('modalDetalle')">✕</button>
+    </div>
+    <div class="modal-tabs-bar">
+      <button class="mtab active" id="btnTabInfo"        onclick="showModalTab('tabInfo')">Perfil</button>
+      <button class="mtab"        id="btnTabReceta"      onclick="showModalTab('tabReceta')">Receta Ideal</button>
+      <button class="mtab"        id="btnTabMisRecetas"  onclick="showModalTab('tabMisRecetas')">Mis Recetas</button>
+      <button class="mtab"        id="btnTabHistorial"   onclick="showModalTab('tabHistorial')">Historial</button>
+    </div>
+    <div class="modal-body">
+      <div class="mtab-panel active" id="tabInfo"></div>
+      <div class="mtab-panel"        id="tabReceta"></div>
+      <div class="mtab-panel"        id="tabMisRecetas"></div>
+      <div class="mtab-panel"        id="tabHistorial"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModal('modalDetalle')">Cerrar</button>
+      <button class="btn btn-accent btn-sm" id="btnEditarDetalle" onclick="editarDesdeDetalle()">✏ Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: MI RECETA ═══ -->
+<div class="overlay" id="modalMiReceta">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Registrar Mi Receta</span>
+      <button class="modal-x" onclick="cerrarModal('modalMiReceta')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="miRecetaForm" onsubmit="guardarMiReceta(event)">
+        <div class="form-grid">
+          <div class="fg"><label>Método</label>
+            <select id="mrMetodo">
+              <option>V60</option><option>AeroPress</option><option>Prensa Francesa</option>
+              <option>Nano Outin</option><option>Moka</option><option>Timemore B65</option>
+              <option>Chemex</option><option>Cold Brew</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="fg"><label>Fecha</label><input type="date" id="mrFecha"></div>
+          <div class="fg"><label>Molido (clicks C3)</label><input id="mrMolido" placeholder="Ej: 42 clicks"></div>
+          <div class="fg"><label>Temperatura</label><input id="mrTemp" placeholder="Ej: 92°C"></div>
+          <div class="fg"><label>Dosis de Café</label><input id="mrDosis" placeholder="Ej: 18g"></div>
+          <div class="fg"><label>Agua</label><input id="mrAgua" placeholder="Ej: 300ml"></div>
+          <div class="fg"><label>Tiempo Total</label><input id="mrTiempo" placeholder="Ej: 3:30 min"></div>
+          <div class="fg"><label>Mi Calificación</label>
+            <div class="rating-inp">
+              <div class="star-btns" id="mrRatingInput">
+                <button type="button" class="s-btn" onclick="setMrRating(1)">★</button>
+                <button type="button" class="s-btn" onclick="setMrRating(2)">★</button>
+                <button type="button" class="s-btn" onclick="setMrRating(3)">★</button>
+                <button type="button" class="s-btn" onclick="setMrRating(4)">★</button>
+                <button type="button" class="s-btn" onclick="setMrRating(5)">★</button>
+              </div>
+              <input type="hidden" id="mrResultado" value="3">
+            </div>
+          </div>
+          <div class="fg full"><label>Notas / Lo que cambiaría</label>
+            <textarea id="mrNotas" placeholder="¿Qué salió bien? ¿Qué cambiarías la próxima vez?"></textarea>
+          </div>
+        </div>
+        <input type="hidden" id="mrCafeId"><input type="hidden" id="mrRecetaId">
+        <div style="display:flex;justify-content:flex-end;gap:var(--sp2);margin-top:var(--sp5);">
+          <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalMiReceta')">Cancelar</button>
+          <button type="submit" class="btn btn-accent">Guardar Receta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: COMPRA ═══ -->
+<div class="overlay" id="modalCompra">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <span class="modal-title">Registrar Compra</span>
+      <button class="modal-x" onclick="cerrarModal('modalCompra')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="compraForm" onsubmit="guardarCompra(event)">
+        <div class="form-grid">
+          <div class="fg"><label>Fecha</label><input type="date" id="cFecha"></div>
+          <div class="fg"><label>Precio (CLP)</label><input type="number" id="cPrecio" step="100" placeholder="Ej: 9990"></div>
+          <div class="fg"><label>Cantidad</label><input id="cCantidad" placeholder="Ej: 250g"></div>
+          <div class="fg full"><label>Notas</label><textarea id="cNotas" style="min-height:55px" placeholder="Ej: precio especial en la feria"></textarea></div>
+        </div>
+        <input type="hidden" id="cCafeId">
+        <div style="display:flex;justify-content:flex-end;gap:var(--sp2);margin-top:var(--sp5);">
+          <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalCompra')">Cancelar</button>
+          <button type="submit" class="btn btn-accent">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   MOLINOS — settings verificados por fuentes oficiales y reviews
+   C3: ~83 µm/click · Whirly 01S: 30 ajustes, ~25 µm/ajuste (eléctrico)
+══════════════════════════════════════════════════════════ */
+const GRINDERS = {
+  C3:     { name: 'Timemore C3',          unit: 'clicks',  desc: 'Manual · ~83 µm/click · 36 clicks total' },
+  Whirly: { name: 'Timemore Whirly 01S',  unit: 'ajuste',  desc: 'Eléctrico · 30 ajustes · ~25 µm/ajuste' }
+};
+let grinderActivo = 'C3';
+
+/* ═══════════════════════════════════════════════════════════
+   RECETAS POR PROCESO — molido con ambos molinos
+   Fuentes: honestcoffeeguide.com, thebasicbarista.com,
+            pullandpourcoffee.com (Whirly 01S review)
+══════════════════════════════════════════════════════════ */
+const RECETAS = {
+  'Lavado': {
+    cssClass: 'pc-lavado', cssColor: 'var(--p-lavado)',
+    perfil: 'Limpio · Ácido · Floral / Cítrico',
+    char: 'La pulpa se remueve antes del secado → sabor cristalino, acidez protagonista.',
+    tip: '💡 Usa 91–93°C para potenciar la acidez limpia. Flujo constante y bloom corto.',
+    metodos: {
+      'V60':            { C3:'13–16', Whirly:'13–17', temp:'91–93°C', dosis:'17–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Flujo controlado resalta sabores limpios sin sobreextracción.', tecnica:'Bloom 30s, 2 fases, flujo constante.' },
+      'AeroPress':      { C3:'12–15', Whirly:'9–13',  temp:'88–90°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida preserva la acidez cítrica y floral.',       tecnica:'Presión lenta 30–40s.' },
+      'Nano Outin':     { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'14–16g', agua:'240ml', tiempo:'2.5–3 min', razon:'Similar a V60 pero con flujo más rápido.',                      tecnica:'Bloom 30s, 2 fases rápidas.' },
+      'Prensa Francesa':{ C3:'20–24', Whirly:'20–24', temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa, molido grueso evita amargor.',              tecnica:'Reposo exacto 4 min, sin agitar.' }
+    }
+  },
+  'Natural': {
+    cssClass: 'pc-natural', cssColor: 'var(--p-natural)',
+    perfil: 'Afrutado · Dulce · Cuerpo Completo',
+    char: 'Se seca con toda la cereza → máxima dulzura, fruta intensa, bajo ácido.',
+    tip: '💡 Temperatura media-alta y tiempos largos de inmersión. No sobreextrae.',
+    metodos: {
+      'Prensa Francesa':{ C3:'20–24', Whirly:'20–24', temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa extrae máxima dulzura y cuerpo.',  tecnica:'Reposo exacto 4 min, sin agitar.' },
+      'AeroPress':      { C3:'14–16', Whirly:'11–14', temp:'90–92°C', dosis:'18–20g', agua:'200ml', tiempo:'1.5–2 min', razon:'Presión suave extrae dulzura sin amargura.',          tecnica:'Presión muy lenta, sin esfuerzo.' },
+      'V60':            { C3:'14–16', Whirly:'14–17', temp:'92–94°C', dosis:'18–20g', agua:'300ml', tiempo:'3.5–4 min', razon:'Flujo lento potencia el cuerpo y la dulzura natural.', tecnica:'Bloom 45s, vierte despacio.' }
+    }
+  },
+  'Honey': {
+    cssClass: 'pc-honey', cssColor: 'var(--p-honey)',
+    perfil: 'Balance Perfecto · Dulce + Ácido',
+    char: 'Pulpa removida, mucílago permanece → equilibrio único entre dulzura y acidez.',
+    tip: '💡 Temperaturas medias (89–92°C). El Honey tiene su propio balance — no lo fuerces.',
+    metodos: {
+      'V60':        { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Control fino destaca el balance natural del Honey.',   tecnica:'Bloom 30s, flujo moderado y constante.' },
+      'AeroPress':  { C3:'13–15', Whirly:'10–13', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Mantiene ambos perfiles sin que uno domine.',          tecnica:'Presión media.' },
+      'Nano Outin': { C3:'13–16', Whirly:'13–16', temp:'89–91°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Ideal para explorar el perfil equilibrado.',           tecnica:'Flujo moderado a rápido.' }
+    }
+  },
+  'Anaeróbico': {
+    cssClass: 'pc-anaer', cssColor: 'var(--p-anaer)',
+    perfil: 'Explosivo · Notas Intensas · Complejo',
+    char: 'Fermentación anaeróbica → sabores intensificados, notas tropicales únicas.',
+    tip: '💡 TEMPERATURA BAJA (87–89°C). El anaeróbico ya tiene mucho que decir — el agua caliente lo abruma.',
+    metodos: {
+      'V60':        { C3:'13–15', Whirly:'12–15', temp:'87–89°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Agua fría previene sobreextracción de la complejidad.',      tecnica:'Bloom cuidadoso, flujo lento y deliberado.' },
+      'AeroPress':  { C3:'12–14', Whirly:'9–12',  temp:'85–87°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Extracción rápida + agua fría = claridad de notas complejas.', tecnica:'Presión consistente, no muy lenta.' },
+      'Nano Outin': { C3:'13–15', Whirly:'12–15', temp:'87–89°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Control de temperatura crítico para no abrumar el perfil.',   tecnica:'NO subas la temp. Bloom largo 40s.' }
+    }
+  },
+  'Natural fermentado': {
+    cssClass: 'pc-fermentado', cssColor: 'var(--p-fermentado)',
+    perfil: 'Ultra Complejo · Frutas Intensas · Cuerpo',
+    char: 'Doble fermentación → intensificación máxima, frutas exóticas, complejidad extrema.',
+    tip: '💡 Temperatura BAJA + bloom largo (45s) para desgasificar bien antes de extraer.',
+    metodos: {
+      'V60':            { C3:'13–15', Whirly:'13–16', temp:'88–90°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Balance entre claridad y complejidad fermentativa.', tecnica:'Bloom largo 45s, flujo deliberado.' },
+      'Prensa Francesa':{ C3:'20–24', Whirly:'20–23', temp:'92–94°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Cuerpo completo complementa la complejidad.',       tecnica:'Reposo total, sin agitar.' }
+    }
+  },
+  'Despulpado natural': {
+    cssClass: 'pc-despulpado', cssColor: 'var(--p-despulpado)',
+    perfil: 'Equilibrio · Cuerpo Medio · Frutas Moderadas',
+    char: 'Punto intermedio entre Lavado y Natural — cuerpo presente con algo de acidez.',
+    tip: '💡 Similar a Honey: explora ambos lados del perfil. V60 funciona muy bien aquí.',
+    metodos: {
+      'V60':       { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Control fino destaca el balance equilibrado.', tecnica:'Estándar V60, flujo moderado.' },
+      'AeroPress': { C3:'13–15', Whirly:'10–13', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Rapidez sin comprometer el balance.',          tecnica:'Presión media.' }
+    }
+  },
+  'Blend': {
+    cssClass: 'pc-blend', cssColor: 'var(--p-blend)',
+    perfil: 'Múltiples Perfiles · Equilibrio Intencionado',
+    char: 'Combinación de orígenes — sigue las instrucciones del tostador si disponibles.',
+    tip: '💡 V60 es tu mejor aliado para blends: su versatilidad maneja múltiples perfiles.',
+    metodos: {
+      'V60':       { C3:'13–16', Whirly:'13–17', temp:'90–93°C', dosis:'18–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Versatilidad del V60 para múltiples perfiles.',    tecnica:'Bloom 30s, flujo constante.' },
+      'AeroPress': { C3:'12–15', Whirly:'9–13',  temp:'88–90°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida mantiene el balance del blend.', tecnica:'Presión consistente.' }
+    }
+  }
+};
+
+const PC_MAP = {
+  'Lavado':'pc-lavado','Natural':'pc-natural','Honey':'pc-honey',
+  'Anaeróbico':'pc-anaer','Natural fermentado':'pc-fermentado',
+  'Despulpado natural':'pc-despulpado','Blend':'pc-blend'
+};
+function getPcClass(p) { return PC_MAP[p] || 'pc-default'; }
+function getReceta(proceso) {
+  if (RECETAS[proceso]) return RECETAS[proceso];
+  for (const k of Object.keys(RECETAS)) {
+    if (proceso && proceso.toLowerCase().includes(k.toLowerCase())) return RECETAS[k];
+  }
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DATOS INICIALES
+══════════════════════════════════════════════════════════ */
+const INIT = [
+  {id:'CF-001',nombre:'Perú Cajamarca',tostador:'202 Coffee Lab',pais:'Perú',region:'Cajamarca',finca:'Finca La Coipa',variedad:'Catimor, Paches',proceso:'Lavado',altitud:'1760',sca:'',notas:'Caramelo; avellana; chocolate amargo',estado:'Probado',resultado:3,recompra:false,obs:'Etiqueta legible.',compras:[],misRecetas:[]},
+  {id:'CF-002',nombre:'Caetano',tostador:'Pickers Coffee',pais:'Brasil',region:'Carmo de Minas',finca:'',variedad:'Mundo Novo, Bourbon Amarillo',proceso:'Despulpado natural',altitud:'',sca:'',notas:'Avellana; chocolate; caramelo',estado:'Probado',resultado:3,recompra:false,obs:'Tueste ligero.',compras:[],misRecetas:[]},
+  {id:'CF-003',nombre:'Perfecto desde Colombia',tostador:'Detrás de la Taza',pais:'Colombia',region:'',finca:'',variedad:'',proceso:'Lavado',altitud:'',sca:'',notas:'Perfil suave, brillante y dulce',estado:'Probado',resultado:3,recompra:false,obs:'Etiqueta ilegible.',compras:[],misRecetas:[]},
+  {id:'CF-004',nombre:'Il Lampu',tostador:'Pickers Coffee',pais:'Bolivia',region:'Caranavi',finca:'',variedad:'Catuai Rojo, Typica, Castillo',proceso:'Lavado',altitud:'',sca:'',notas:'Chocolate amargo; durazno; almendras',estado:'Probado',resultado:3,recompra:false,obs:'Tueste medio-ligero.',compras:[],misRecetas:[]},
+  {id:'CF-005',nombre:'Furnas',tostador:'Lama Tostadores',pais:'Brasil',region:'',finca:'Furnas',variedad:'Catuai Amarillo, Icatu',proceso:'Natural',altitud:'1450',sca:'',notas:'Dulzor; intensidad',estado:'Probado',resultado:3,recompra:false,obs:'',compras:[{id:'C-1',fecha:'2025-09-30',precio:'',cantidad:'',notas:''}],misRecetas:[]},
+  {id:'CF-006',nombre:'El Corazón',tostador:'Pickers Coffee',pais:'Colombia',region:'Caldas',finca:'',variedad:'Caturra, Tabi',proceso:'Lavado',altitud:'',sca:'',notas:'Chocolate; vainilla; caramelo; panela',estado:'Probado',resultado:3,recompra:false,obs:'Tueste ligero.',compras:[],misRecetas:[]},
+  {id:'CF-007',nombre:'Brasil Isidro Pereira',tostador:'La Raza Coffee Roasters',pais:'Brasil',region:'',finca:'Finca Isidro Pereira',variedad:'Bourbon Amarillo',proceso:'Natural',altitud:'1200',sca:'84',notas:'Acidez sutil; dulce a miel; frutos secos; cacao',estado:'Probado',resultado:4,recompra:true,obs:'Tostado en Chillán. Cosecha 2024.',compras:[],misRecetas:[]},
+  {id:'CF-008',nombre:'Evolve Blend',tostador:'Blackdrop',pais:'Colombia/Honduras',region:'Huila / Copán',finca:'',variedad:'Arábica',proceso:'Blend',altitud:'',sca:'',notas:'Dulce; durazno; uva; chocolate; cuerpo redondo',estado:'Probado',resultado:3,recompra:false,obs:'',compras:[],misRecetas:[]},
+  {id:'CF-009',nombre:'Muhororo',tostador:'Floresta Coffee Roaster',pais:'Ruanda',region:'Nyamasheke',finca:'Muhororo CWS',variedad:'100% Bourbon Rojo',proceso:'Anaeróbico',altitud:'1650–2110',sca:'86.5',notas:'Miel; azúcar de caña; papaya; pomelo',estado:'Probado',resultado:4,recompra:false,obs:'Cosecha junio 2024.',compras:[],misRecetas:[]},
+  {id:'CF-010',nombre:'Wilish-Wilish',tostador:'Floresta Coffee Roaster',pais:'Colombia',region:'Bolívar, Cauca',finca:'Finca La Reserva',variedad:'Java',proceso:'Natural fermentado',altitud:'1850',sca:'',notas:'Granadilla; lulo; caña; caramelo',estado:'Probado',resultado:3,recompra:false,obs:'Fermentado doble.',compras:[],misRecetas:[]},
+  {id:'CF-011',nombre:'Durazno Rosado',tostador:'Floresta Coffee Roaster',pais:'Colombia',region:'Huila',finca:'Finca La España',variedad:'Geisha',proceso:'Lavado',altitud:'1720',sca:'86',notas:'Carambola; kiwi; frutilla',estado:'Probado',resultado:4,recompra:false,obs:'Productor Yamile Barreto.',compras:[],misRecetas:[]},
+  {id:'CF-012',nombre:'Piamonte',tostador:'Floresta Coffee Roaster',pais:'Colombia',region:'Huila',finca:'Finca La Pradera',variedad:'Caturra',proceso:'Lavado',altitud:'1450',sca:'87',notas:'Damasco; ciruela; maní',estado:'Probado',resultado:4,recompra:false,obs:'',compras:[],misRecetas:[]},
+  {id:'CF-013',nombre:'Camila / Guatemalteca',tostador:'Café 3 Ciclos',pais:'Guatemala',region:'La Libertad',finca:'',variedad:'',proceso:'Desconocido',altitud:'',sca:'',notas:'No legible',estado:'Probado',resultado:3,recompra:false,obs:'Formato botella.',compras:[],misRecetas:[]},
+  {id:'CF-014',nombre:'Caturra Natural',tostador:'Floresta Coffee Roaster',pais:'Colombia',region:'Huila',finca:'Finca La Colina',variedad:'Caturra',proceso:'Natural',altitud:'1600',sca:'86',notas:'Maracuyá; melón; cacao',estado:'Probado',resultado:4,recompra:false,obs:'Productor Alex Núñez.',compras:[],misRecetas:[]},
+  {id:'CF-015',nombre:'Otoñena',tostador:'Floresta Coffee Roaster',pais:'Honduras',region:'Jesús de Otoro',finca:'Finca Las Gotas',variedad:'Desconocida',proceso:'Lavado',altitud:'',sca:'86',notas:'Carambola; avellana',estado:'Probado',resultado:4,recompra:false,obs:'Caficultor Miguel Flores.',compras:[],misRecetas:[]},
+  {id:'CF-016',nombre:'Java Sergio Gutiérrez',tostador:'Método Café',pais:'Nicaragua',region:'Ocotal',finca:'Sergio Gutiérrez',variedad:'Java',proceso:'Lavado',altitud:'1650',sca:'',notas:'Té blanco; dulce de leche; sedoso',estado:'Probado',resultado:3,recompra:false,obs:'',compras:[],misRecetas:[]},
+  {id:'CF-017',nombre:'Hermanos Fernández',tostador:'Método Café',pais:'Bolivia',region:'Caranavi',finca:'Hermanos Fernández',variedad:'Catuai Rojo, Typica, Mundo Novo',proceso:'Lavado',altitud:'1550',sca:'',notas:'Naranja; caramelo; cedrón',estado:'Probado',resultado:3,recompra:false,obs:'',compras:[],misRecetas:[]},
+  {id:'CF-018',nombre:'Colombia Samaria',tostador:'La Raza Coffee Roasters',pais:'Colombia',region:'Risaralda',finca:'Finca Samaria',variedad:'Tabi',proceso:'Honey',altitud:'1600',sca:'',notas:'Cáscara de naranja; ciruela; caramelo',estado:'Probado',resultado:3,recompra:false,obs:'Tostado en Chillán.',compras:[],misRecetas:[]}
+];
+
+/* ═══════════════════════════════════════════════════════════
+   ESTADO
+══════════════════════════════════════════════════════════ */
+let cafes = [];
+let cafeDetalleActual = null;
+
+/* ═══════════════════════════════════════════════════════════
+   STORAGE
+══════════════════════════════════════════════════════════ */
+function cargar() {
+  try {
+    const raw = localStorage.getItem('diario_cafe_v2');
+    cafes = raw ? JSON.parse(raw) : INIT;
+  } catch { cafes = INIT; }
+  if (!localStorage.getItem('diario_cafe_v2')) guardar();
+}
+function guardar() { localStorage.setItem('diario_cafe_v2', JSON.stringify(cafes)); }
+
+/* ═══════════════════════════════════════════════════════════
+   NAVEGACIÓN
+══════════════════════════════════════════════════════════ */
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if (id === 'estadisticas') renderStats();
+  if (id === 'recetas') renderGuia();
+}
+function showModalTab(id) {
+  document.querySelectorAll('.mtab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mtab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const map = {tabInfo:'btnTabInfo',tabReceta:'btnTabReceta',tabMisRecetas:'btnTabMisRecetas',tabHistorial:'btnTabHistorial'};
+  document.getElementById(map[id]).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER INVENTARIO
+══════════════════════════════════════════════════════════ */
+function renderInventario(lista) {
+  /* stats */
+  const recompra = cafes.filter(c=>c.recompra).length;
+  const porProbar = cafes.filter(c=>c.estado==='Por probar').length;
+  const prom = cafes.length ? (cafes.reduce((s,c)=>s+c.resultado,0)/cafes.length).toFixed(1) : '–';
+  document.getElementById('statsMini').innerHTML =
+    chip(cafes.length,'Total','cafés') +
+    chip(porProbar,'Por probar','') +
+    chip(recompra,'Recompra','') +
+    chip(prom,'Rating prom.','/ 5') +
+    chip(lista.length,'Mostrando','');
+
+  if (!lista.length) {
+    document.getElementById('cafeGrid').innerHTML = `<div class="empty-state"><div class="empty-icon">☕</div><p>Sin cafés en esta selección</p><small>Prueba ajustando los filtros</small></div>`;
+    return;
+  }
+
+  /* cards — staggered animation */
+  document.getElementById('cafeGrid').innerHTML = lista.map((c,i) => {
+    const pc = getPcClass(c.proceso);
+    const isHoney = c.proceso === 'Honey';
+    const stars = [1,2,3,4,5].map(n=>`<span class="star-icon${n<=c.resultado?' lit':''}">${n<=c.resultado?'★':'☆'}</span>`).join('');
+    const tags = (c.notas||'').split(';').filter(Boolean).map(n=>`<span class="flavor-tag">${n.trim()}</span>`).join('');
+    return `
+    <div class="cafe-card" style="animation-delay:${i*28}ms">
+      <div class="card-zone ${pc}">
+        <span class="zone-process">${c.proceso}</span>
+        <button class="zone-recompra${c.recompra?' on':''}" onclick="toggleRecompra('${c.id}')" title="${c.recompra?'✓ Recompraría':'Marcar para recompra'}">♻</button>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="coffee-name">${c.nombre}</div>
+          <div class="coffee-origin">${[c.tostador,c.region?c.region+(c.pais?', '+c.pais:''): c.pais].filter(Boolean).join(' · ')}</div>
+        </div>
+        <div class="card-details">
+          ${c.variedad ? `<div class="card-det"><div class="dl">Variedad</div><div class="dv">${c.variedad}</div></div>` : ''}
+          ${c.altitud  ? `<div class="card-det"><div class="dl">Altitud</div><div class="dv">${c.altitud} msnm</div></div>` : ''}
+          ${c.finca    ? `<div class="card-det"><div class="dl">Finca</div><div class="dv">${c.finca}</div></div>` : ''}
+          <div class="card-det"><div class="dl">Estado</div><div class="dv">${c.estado}</div></div>
+        </div>
+        ${tags ? `<div class="flavor-tags">${tags}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="card-rating">
+            <div class="stars-row">${stars}</div>
+            <span class="rating-score">${c.resultado}/5</span>
+          </div>
+          ${c.recompra ? '<span class="recompra-label">♻ Recompra</span>' : ''}
+          ${c.sca      ? `<span class="sca-pill">SCA ${c.sca}</span>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-sm" style="flex:2" onclick="abrirDetalle('${c.id}')">Ver detalles</button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirFormEditar('${c.id}')">✏</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminar('${c.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function chip(val,lbl,sub) {
+  return `<div class="stat-chip"><div class="val">${val}</div><div class="meta"><div class="lbl">${lbl}</div>${sub?`<div class="sub">${sub}</div>`:''}</div></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ESTADO DE FILTROS
+══════════════════════════════════════════════════════════ */
+let filtros = { q:'', estado:'', procesos: new Set(), paises: new Set(), ratingMin: 0, soloRecompra: false };
+
+/* ═══════════════════════════════════════════════════════════
+   FILTROS
+══════════════════════════════════════════════════════════ */
+function poblarFiltros() {
+  /* Estado counts */
+  document.getElementById('ec-all').textContent = cafes.length;
+  document.getElementById('ec-pp').textContent  = cafes.filter(c=>c.estado==='Por probar').length;
+  document.getElementById('ec-pr').textContent  = cafes.filter(c=>c.estado==='Probado').length;
+  document.getElementById('ec-te').textContent  = cafes.filter(c=>c.estado==='Terminado').length;
+
+  /* Process chips */
+  const procesos = [...new Set(cafes.map(c=>c.proceso).filter(Boolean))].sort();
+  document.getElementById('procesosChips').innerHTML = procesos.map(p => {
+    const pc = getPcClass(p);
+    const isActive = filtros.procesos.has(p);
+    return `<button class="qf-chip ${pc}${isActive?' pc-active-'+pc:''}" onclick="toggleProcesoChip('${p}')" data-p="${p}">${p}</button>`;
+  }).join('');
+
+  /* Country chips */
+  const paises = [...new Set(cafes.map(c=>c.pais).filter(Boolean))].sort();
+  document.getElementById('paisChips').innerHTML = paises.map(p =>
+    `<button class="qf-chip${filtros.paises.has(p)?' active':''}" onclick="togglePaisChip('${p}')">${p}</button>`
+  ).join('');
+
+  updateFilterCount();
+}
+
+function setEstado(btn) {
+  filtros.estado = btn.dataset.est || '';
+  document.querySelectorAll('.etab').forEach(b => b.classList.toggle('active', b === btn));
+  filtrar();
+}
+
+function toggleProcesoChip(p) {
+  if (filtros.procesos.has(p)) filtros.procesos.delete(p);
+  else filtros.procesos.add(p);
+  document.querySelectorAll('#procesosChips .qf-chip').forEach(btn => {
+    const pc = getPcClass(btn.dataset.p);
+    const on = filtros.procesos.has(btn.dataset.p);
+    btn.className = `qf-chip ${pc}${on?' pc-active-'+pc:''}`;
+  });
+  updateFilterCount(); filtrar();
+}
+
+function togglePaisChip(p) {
+  if (filtros.paises.has(p)) filtros.paises.delete(p);
+  else filtros.paises.add(p);
+  document.querySelectorAll('#paisChips .qf-chip').forEach(btn => {
+    btn.classList.toggle('active', filtros.paises.has(btn.textContent.trim()));
+  });
+  updateFilterCount(); filtrar();
+}
+
+function setRatingMin(r) {
+  filtros.ratingMin = (filtros.ratingMin === r) ? 0 : r;
+  document.querySelectorAll('.rstar').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.r) <= filtros.ratingMin)
+  );
+  updateFilterCount(); filtrar();
+}
+
+function toggleSoloRecompra() {
+  filtros.soloRecompra = !filtros.soloRecompra;
+  document.getElementById('recompraToggle').classList.toggle('active', filtros.soloRecompra);
+  updateFilterCount(); filtrar();
+}
+
+function updateFilterCount() {
+  const n = (filtros.estado?1:0) + filtros.procesos.size + filtros.paises.size +
+            (filtros.ratingMin?1:0) + (filtros.soloRecompra?1:0);
+  const el = document.getElementById('filterCount');
+  el.textContent = n > 0 ? n + (n===1?' filtro activo':' filtros activos') : '';
+  el.style.display = n > 0 ? 'inline' : 'none';
+}
+
+function filtrar() {
+  const q = (document.getElementById('searchInput').value||'').toLowerCase();
+  filtros.q = q;
+  renderInventario(cafes.filter(c =>
+    (!q || [c.nombre,c.tostador,c.finca,c.variedad,c.region,c.pais,c.notas].some(v=>(v||'').toLowerCase().includes(q))) &&
+    (!filtros.estado || c.estado === filtros.estado) &&
+    (filtros.procesos.size === 0 || filtros.procesos.has(c.proceso)) &&
+    (filtros.paises.size === 0 || filtros.paises.has(c.pais)) &&
+    (!filtros.ratingMin || c.resultado >= filtros.ratingMin) &&
+    (!filtros.soloRecompra || c.recompra)
+  ));
+}
+
+function limpiarFiltros() {
+  document.getElementById('searchInput').value = '';
+  filtros = { q:'', estado:'', procesos: new Set(), paises: new Set(), ratingMin: 0, soloRecompra: false };
+  document.querySelectorAll('.etab').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.rstar').forEach(b => b.classList.remove('active'));
+  document.getElementById('recompraToggle').classList.remove('active');
+  document.getElementById('filterCount').style.display = 'none';
+  poblarFiltros();
+  filtrar();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOGGLE RECOMPRA
+══════════════════════════════════════════════════════════ */
+function toggleRecompra(id) {
+  const c = cafes.find(x=>x.id===id); if(!c) return;
+  c.recompra = !c.recompra; guardar(); filtrar();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FORMULARIO CAFÉ
+══════════════════════════════════════════════════════════ */
+let editandoId = null;
+
+function abrirFormNuevo() {
+  editandoId = null;
+  document.getElementById('formTitle').textContent = 'Agregar Café';
+  document.getElementById('cafeForm').reset();
+  setRating(3); abrirModal('modalForm');
+}
+function abrirFormEditar(id) {
+  const c = cafes.find(x=>x.id===id); if(!c) return;
+  editandoId = id;
+  document.getElementById('formTitle').textContent = 'Editar · ' + c.nombre;
+  const f = (fId,val) => { const el=document.getElementById(fId); if(el) el.value=val||''; };
+  f('fNombre',c.nombre); f('fTostador',c.tostador); f('fPais',c.pais); f('fRegion',c.region);
+  f('fFinca',c.finca); f('fVariedad',c.variedad); f('fProceso',c.proceso); f('fAltitud',c.altitud);
+  f('fSCA',c.sca); f('fEstadoCafe',c.estado); f('fNotas',c.notas);
+  f('fPrecio',c.precio); f('fFecha',c.fecha); f('fObs',c.obs);
+  setRating(c.resultado||3);
+  document.getElementById('fRecompra').checked = !!c.recompra;
+  abrirModal('modalForm');
+}
+function editarDesdeDetalle() {
+  if(cafeDetalleActual){ cerrarModal('modalDetalle'); abrirFormEditar(cafeDetalleActual.id); }
+}
+function guardarCafe(e) {
+  e.preventDefault();
+  const v = id => (document.getElementById(id)||{}).value||'';
+  const cafe = {
+    id: editandoId || 'CF-'+Date.now(),
+    nombre:v('fNombre').trim(), tostador:v('fTostador').trim(), pais:v('fPais').trim(),
+    region:v('fRegion').trim(), finca:v('fFinca').trim(), variedad:v('fVariedad').trim(),
+    proceso:v('fProceso'), altitud:v('fAltitud').trim(), sca:v('fSCA').trim(),
+    estado:v('fEstadoCafe'), notas:v('fNotas').trim(),
+    resultado:parseInt(v('fResultado'))||3,
+    recompra:document.getElementById('fRecompra').checked,
+    precio:v('fPrecio'), fecha:v('fFecha'), obs:v('fObs').trim()
+  };
+  if(editandoId) {
+    const idx = cafes.findIndex(c=>c.id===editandoId);
+    const ex = cafes[idx];
+    cafe.compras = ex.compras||[]; cafe.misRecetas = ex.misRecetas||[];
+    cafes[idx] = cafe;
+  } else {
+    cafe.compras = []; cafe.misRecetas = [];
+    if(cafe.precio && cafe.fecha) cafe.compras.push({id:'C-'+Date.now(),fecha:cafe.fecha,precio:cafe.precio,cantidad:'',notas:''});
+    cafes.push(cafe);
+  }
+  guardar(); poblarFiltros(); filtrar(); cerrarModal('modalForm');
+}
+function eliminar(id) {
+  if(confirm('¿Eliminar este café del diario?')) { cafes=cafes.filter(c=>c.id!==id); guardar(); filtrar(); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DETALLE
+══════════════════════════════════════════════════════════ */
+function abrirDetalle(id) {
+  const c = cafes.find(x=>x.id===id); if(!c) return;
+  cafeDetalleActual = c;
+  document.getElementById('detalleTitulo').textContent = c.nombre;
+  showModalTab('tabInfo');
+  renderTabInfo(c); renderTabReceta(c); renderTabMisRecetas(c); renderTabHistorial(c);
+  abrirModal('modalDetalle');
+}
+
+function renderTabInfo(c) {
+  const stars = [1,2,3,4,5].map(n=>`<span style="color:${n<=c.resultado?'var(--gold)':'var(--s3)'};font-size:1.2rem;">${n<=c.resultado?'★':'☆'}</span>`).join('');
+  const tags = (c.notas||'').split(';').filter(Boolean).map(n=>`<span class="flavor-tag">${n.trim()}</span>`).join('');
+  document.getElementById('tabInfo').innerHTML = `
+    <div class="sec-hd">Información del Café</div>
+    <div class="det-grid">
+      <div class="det-field"><div class="dl">Tostador</div><div class="dv">${c.tostador||'—'}</div></div>
+      <div class="det-field"><div class="dl">País</div><div class="dv">${c.pais||'—'}</div></div>
+      <div class="det-field"><div class="dl">Región</div><div class="dv">${c.region||'—'}</div></div>
+      <div class="det-field"><div class="dl">Finca</div><div class="dv">${c.finca||'—'}</div></div>
+      <div class="det-field"><div class="dl">Variedad</div><div class="dv">${c.variedad||'—'}</div></div>
+      <div class="det-field"><div class="dl">Proceso</div><div class="dv">${c.proceso||'—'}</div></div>
+      <div class="det-field"><div class="dl">Altitud</div><div class="dv">${c.altitud?c.altitud+' msnm':'—'}</div></div>
+      <div class="det-field"><div class="dl">Puntaje SCA</div><div class="dv">${c.sca||'—'}</div></div>
+      <div class="det-field"><div class="dl">Estado</div><div class="dv">${c.estado}</div></div>
+      <div class="det-field"><div class="dl">¿Recompra?</div><div class="dv">${c.recompra?'✓ Sí':'✗ No'}</div></div>
+    </div>
+    ${tags?`<div class="sec-hd" style="margin-top:var(--sp5)">Notas de Cata</div><div class="flavor-tags">${tags}</div>`:''}
+    <div class="sec-hd" style="margin-top:var(--sp5)">Mi Calificación</div>
+    <div style="display:flex;align-items:center;gap:10px;">${stars}<span style="color:var(--t3);font-size:var(--tx-sm)">${c.resultado}/5</span></div>
+    ${c.obs?`<div style="margin-top:var(--sp4);font-size:var(--tx-sm);color:var(--t2);font-style:italic;padding:var(--sp3) var(--sp4);background:var(--s1);border-radius:var(--r2);">${c.obs}</div>`:''}
+  `;
+}
+
+function renderTabReceta(c) {
+  const r = getReceta(c.proceso);
+  if(!r) {
+    document.getElementById('tabReceta').innerHTML = `<p style="color:var(--t3);font-size:var(--tx-base);padding:var(--sp5) 0">Sin receta predefinida para "${c.proceso}". Registra la tuya en "Mis Recetas".</p>`;
+    return;
+  }
+  const isHoney = c.proceso === 'Honey';
+  const g = GRINDERS[grinderActivo];
+  let html = `
+    <div class="rec-banner">
+      <div class="rec-badge ${r.cssClass}${isHoney?' honey-txt':''}" style="background:${r.cssColor}">${c.proceso}</div>
+      <div class="rec-perfil">${r.perfil}</div>
+      <div class="rec-char">${r.char}</div>
+    </div>
+    <div class="rec-tip">${r.tip}</div>
+  `;
+  for(const [m,p] of Object.entries(r.metodos)) {
+    html += `
+    <div class="metodo-block">
+      <div class="metodo-name">☕ ${m}</div>
+      <div class="metodo-params">
+        <div class="mp"><div class="mpl">${g.name} (${g.unit})</div><div class="mpv">${p[grinderActivo]}</div></div>
+        <div class="mp"><div class="mpl">Temperatura</div><div class="mpv">${p.temp}</div></div>
+        <div class="mp"><div class="mpl">Dosis</div><div class="mpv">${p.dosis}</div></div>
+        <div class="mp"><div class="mpl">Agua</div><div class="mpv">${p.agua}</div></div>
+        <div class="mp"><div class="mpl">Tiempo</div><div class="mpv">${p.tiempo}</div></div>
+      </div>
+      <div class="metodo-razon">🧪 ${p.razon}</div>
+      <div class="metodo-tecnica">🎯 ${p.tecnica}</div>
+    </div>`;
+  }
+  document.getElementById('tabReceta').innerHTML = html;
+}
+
+function renderTabMisRecetas(c) {
+  const recs = c.misRecetas||[];
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp4);">
+    <span style="font-size:var(--tx-sm);color:var(--t3)">${recs.length} receta(s)</span>
+    <button class="btn btn-accent btn-sm" onclick="abrirMiReceta('${c.id}')">＋ Agregar</button>
+  </div>`;
+  if(!recs.length) {
+    html += `<div style="text-align:center;padding:var(--sp10) 0;color:var(--t3)"><div style="font-size:2.5rem;margin-bottom:var(--sp3)">📝</div><p style="font-size:var(--tx-base)">Aún no registraste recetas para este café.</p><p style="font-size:var(--tx-sm);margin-top:6px">Guarda tus preparaciones para recordar qué funcionó mejor.</p></div>`;
+  } else {
+    recs.forEach(r => {
+      const stars = [1,2,3,4,5].map(n=>`<span style="color:${n<=(r.resultado||0)?'var(--gold)':'var(--s3)'}">${n<=(r.resultado||0)?'★':'☆'}</span>`).join('');
+      html += `<div class="my-rec">
+        <div class="my-rec-hd">
+          <div><div class="my-rec-method">${r.metodo}</div><div class="my-rec-date">${r.fecha?fmtFecha(r.fecha):''}</div></div>
+          <div style="display:flex;align-items:center;gap:8px"><span>${stars}</span>
+            <button class="btn btn-ghost btn-sm" onclick="editarMiReceta('${c.id}','${r.id}')">✏</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminarMiReceta('${c.id}','${r.id}')">🗑</button>
+          </div>
+        </div>
+        <div class="my-rec-params">
+          ${r.molido?`<div class="mrp"><div class="mrl">Molido</div><div class="mrv">${r.molido}</div></div>`:''}
+          ${r.temp  ?`<div class="mrp"><div class="mrl">Temp</div><div class="mrv">${r.temp}</div></div>`:''}
+          ${r.dosis ?`<div class="mrp"><div class="mrl">Dosis</div><div class="mrv">${r.dosis}</div></div>`:''}
+          ${r.agua  ?`<div class="mrp"><div class="mrl">Agua</div><div class="mrv">${r.agua}</div></div>`:''}
+          ${r.tiempo?`<div class="mrp"><div class="mrl">Tiempo</div><div class="mrv">${r.tiempo}</div></div>`:''}
+        </div>
+        ${r.notas?`<div class="my-rec-notes">${r.notas}</div>`:''}
+      </div>`;
+    });
+  }
+  document.getElementById('tabMisRecetas').innerHTML = html;
+}
+
+function renderTabHistorial(c) {
+  const comp = c.compras||[];
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp4);">
+    <span style="font-size:var(--tx-sm);color:var(--t3)">${comp.length} compra(s)</span>
+    <button class="btn btn-accent btn-sm" onclick="abrirCompra('${c.id}')">＋ Registrar Compra</button>
+  </div>`;
+  if(!comp.length) {
+    html += `<div style="text-align:center;padding:var(--sp10) 0;color:var(--t3)"><div style="font-size:2.5rem;margin-bottom:var(--sp3)">🛒</div><p style="font-size:var(--tx-base)">No hay compras registradas.</p></div>`;
+  } else {
+    const total = comp.filter(x=>x.precio).reduce((s,x)=>s+parseFloat(x.precio||0),0);
+    [...comp].reverse().forEach(co => {
+      html += `<div class="compra-row">
+        <div style="flex:1"><div class="compra-dt">${co.fecha?fmtFecha(co.fecha):'Sin fecha'}</div>
+          <div class="compra-sub">${[co.cantidad,co.notas].filter(Boolean).join(' · ')||'—'}</div></div>
+        ${co.precio?`<div class="compra-price">$${parseInt(co.precio).toLocaleString('es-CL')}</div>`:''}
+        <button class="btn btn-danger btn-sm" onclick="eliminarCompra('${c.id}','${co.id}')">🗑</button>
+      </div>`;
+    });
+    if(total>0) html += `<div style="text-align:right;font-size:var(--tx-sm);color:var(--t3);margin-top:var(--sp3)">Total invertido: <strong style="color:var(--ac)">$${total.toLocaleString('es-CL')}</strong></div>`;
+  }
+  document.getElementById('tabHistorial').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MIS RECETAS
+══════════════════════════════════════════════════════════ */
+function abrirMiReceta(cafeId, recetaId) {
+  document.getElementById('mrCafeId').value = cafeId;
+  document.getElementById('mrRecetaId').value = recetaId||'';
+  document.getElementById('miRecetaForm').reset();
+  document.getElementById('mrFecha').value = hoy();
+  setMrRating(3);
+  if(recetaId) {
+    const cafe = cafes.find(c=>c.id===cafeId);
+    const r = (cafe?.misRecetas||[]).find(r=>r.id===recetaId);
+    if(r) {
+      document.getElementById('mrMetodo').value=r.metodo||'V60';
+      document.getElementById('mrFecha').value=r.fecha||'';
+      document.getElementById('mrMolido').value=r.molido||'';
+      document.getElementById('mrTemp').value=r.temp||'';
+      document.getElementById('mrDosis').value=r.dosis||'';
+      document.getElementById('mrAgua').value=r.agua||'';
+      document.getElementById('mrTiempo').value=r.tiempo||'';
+      document.getElementById('mrNotas').value=r.notas||'';
+      setMrRating(r.resultado||3);
+    }
+  }
+  abrirModal('modalMiReceta');
+}
+function editarMiReceta(cid,rid) { cerrarModal('modalDetalle'); setTimeout(()=>abrirMiReceta(cid,rid),80); }
+function guardarMiReceta(e) {
+  e.preventDefault();
+  const cid=document.getElementById('mrCafeId').value;
+  const rid=document.getElementById('mrRecetaId').value;
+  const cafe=cafes.find(c=>c.id===cid); if(!cafe) return;
+  const v=id=>(document.getElementById(id)||{}).value||'';
+  const rec={
+    id:rid||'R-'+Date.now(), metodo:v('mrMetodo'), fecha:v('mrFecha'),
+    molido:v('mrMolido').trim(), temp:v('mrTemp').trim(), dosis:v('mrDosis').trim(),
+    agua:v('mrAgua').trim(), tiempo:v('mrTiempo').trim(),
+    resultado:parseInt(v('mrResultado'))||3, notas:v('mrNotas').trim()
+  };
+  if(!cafe.misRecetas) cafe.misRecetas=[];
+  if(rid) { const idx=cafe.misRecetas.findIndex(r=>r.id===rid); if(idx>=0) cafe.misRecetas[idx]=rec; }
+  else cafe.misRecetas.push(rec);
+  guardar(); cerrarModal('modalMiReceta'); abrirDetalle(cid); showModalTab('tabMisRecetas');
+}
+function eliminarMiReceta(cid,rid) {
+  if(!confirm('¿Eliminar esta receta?')) return;
+  const cafe=cafes.find(c=>c.id===cid); if(!cafe) return;
+  cafe.misRecetas=(cafe.misRecetas||[]).filter(r=>r.id!==rid);
+  guardar(); renderTabMisRecetas(cafe);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HISTORIAL COMPRAS
+══════════════════════════════════════════════════════════ */
+function abrirCompra(cid) {
+  document.getElementById('cCafeId').value=cid;
+  document.getElementById('compraForm').reset();
+  document.getElementById('cFecha').value=hoy();
+  abrirModal('modalCompra');
+}
+function guardarCompra(e) {
+  e.preventDefault();
+  const cid=document.getElementById('cCafeId').value;
+  const cafe=cafes.find(c=>c.id===cid); if(!cafe) return;
+  if(!cafe.compras) cafe.compras=[];
+  const v=id=>(document.getElementById(id)||{}).value||'';
+  cafe.compras.push({id:'C-'+Date.now(),fecha:v('cFecha'),precio:v('cPrecio'),cantidad:v('cCantidad').trim(),notas:v('cNotas').trim()});
+  guardar(); cerrarModal('modalCompra'); abrirDetalle(cid); showModalTab('tabHistorial');
+}
+function eliminarCompra(cid,coId) {
+  if(!confirm('¿Eliminar esta compra?')) return;
+  const cafe=cafes.find(c=>c.id===cid); if(!cafe) return;
+  cafe.compras=(cafe.compras||[]).filter(c=>c.id!==coId);
+  guardar(); renderTabHistorial(cafe);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SELECTOR DE MOLINO
+══════════════════════════════════════════════════════════ */
+function setGrinder(key) {
+  grinderActivo = key;
+  document.querySelectorAll('.gtab').forEach(b => b.classList.remove('active'));
+  document.getElementById('gtab-'+key).classList.add('active');
+  document.getElementById('grinderDesc').textContent = GRINDERS[key].desc;
+  renderGuia();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GUÍA RECETAS
+══════════════════════════════════════════════════════════ */
+function renderGuia() {
+  const g = GRINDERS[grinderActivo];
+  document.getElementById('guiaGrid').innerHTML = Object.entries(RECETAS).map(([p,r]) => {
+    const isH = p==='Honey';
+    const metodosHtml = Object.entries(r.metodos).map(([m,d])=>`
+      <div class="guia-metodo">
+        <h4>${m}</h4>
+        <div class="guia-params">
+          <div class="gp"><div class="gpl">${g.name} (${g.unit})</div><div class="gpv">${d[grinderActivo]}</div></div>
+          <div class="gp"><div class="gpl">Temp</div><div class="gpv">${d.temp}</div></div>
+          <div class="gp"><div class="gpl">Dosis</div><div class="gpv">${d.dosis}</div></div>
+          <div class="gp"><div class="gpl">Agua</div><div class="gpv">${d.agua}</div></div>
+          <div class="gp"><div class="gpl">Tiempo</div><div class="gpv">${d.tiempo}</div></div>
+        </div>
+        <div class="guia-razon">${d.razon}</div>
+      </div>`).join('');
+    return `
+    <div class="guia-card">
+      <div class="guia-card-zone ${r.cssClass}${isH?' honey-txt':''}">
+        <div class="process-lbl">${p}</div>
+        <div class="perfil-txt">${r.perfil}</div>
+      </div>
+      <div class="guia-card-body">
+        <div class="guia-tip">${r.tip}</div>
+        ${metodosHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ESTADÍSTICAS
+══════════════════════════════════════════════════════════ */
+function renderStats() {
+  const porPais={}, porProceso={};
+  cafes.forEach(c=>{
+    if(c.pais) porPais[c.pais]=(porPais[c.pais]||0)+1;
+    if(c.proceso) porProceso[c.proceso]=(porProceso[c.proceso]||0)+1;
+  });
+  const top5 = [...cafes].filter(c=>c.resultado).sort((a,b)=>b.resultado-a.resultado).slice(0,5);
+  const totalR = cafes.reduce((s,c)=>s+(c.misRecetas||[]).length,0);
+  const totalC = cafes.reduce((s,c)=>s+(c.compras||[]).length,0);
+  const prom = cafes.length?(cafes.reduce((s,c)=>s+c.resultado,0)/cafes.length).toFixed(2):0;
+  const recompra = cafes.filter(c=>c.recompra).length;
+  const estados = {
+    'Por probar':cafes.filter(c=>c.estado==='Por probar').length,
+    'Probado':cafes.filter(c=>c.estado==='Probado').length,
+    'Terminado':cafes.filter(c=>c.estado==='Terminado').length
+  };
+
+  const bars=(obj,max,colorFn)=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>`
+    <div class="bar-item">
+      <div class="bar-lbl"><span>${k}</span><span>${v}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v/max*100).toFixed(0)}%;${colorFn?'background:'+colorFn(k):''}"></div></div>
+    </div>`).join('');
+
+  const maxPais = Math.max(...Object.values(porPais),1);
+  const maxProc = Math.max(...Object.values(porProceso),1);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stats-card" style="grid-column:1/-1">
+      <div class="stats-card-title">Resumen General</div>
+      <div class="big-stats">
+        <div class="big-stat"><div class="bv">${cafes.length}</div><div class="bl">Cafés</div></div>
+        <div class="big-stat"><div class="bv">${recompra}</div><div class="bl">Recompra</div></div>
+        <div class="big-stat"><div class="bv">${prom}</div><div class="bl">Rating</div></div>
+        <div class="big-stat"><div class="bv">${totalR}</div><div class="bl">Mis recetas</div></div>
+        <div class="big-stat"><div class="bv">${totalC}</div><div class="bl">Compras</div></div>
+        <div class="big-stat"><div class="bv">${Object.keys(porPais).length}</div><div class="bl">Países</div></div>
+      </div>
+    </div>
+    <div class="stats-card"><div class="stats-card-title">Por País de Origen</div>${bars(porPais,maxPais,null)}</div>
+    <div class="stats-card"><div class="stats-card-title">Por Proceso</div>${bars(porProceso,maxProc,k=>RECETAS[k]?.cssColor||'var(--ac)')}</div>
+    <div class="stats-card">
+      <div class="stats-card-title">Mis Favoritos</div>
+      <div>${top5.map((c,i)=>`<div class="top-item"><div class="top-rank">${['01','02','03','04','05'][i]}</div><div class="top-name">${c.nombre}</div><div class="top-score">${'★'.repeat(c.resultado)}</div></div>`).join('')}</div>
+    </div>
+    <div class="stats-card"><div class="stats-card-title">Por Estado</div>${Object.entries(estados).map(([k,v])=>`
+      <div class="bar-item"><div class="bar-lbl"><span>${k}</span><span>${v}</span></div><div class="bar-track"><div class="bar-fill" style="width:${cafes.length?(v/cafes.length*100).toFixed(0):0}%"></div></div></div>`).join('')}
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODALES
+══════════════════════════════════════════════════════════ */
+function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+window.addEventListener('click', e => { if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+window.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(m=>m.classList.remove('open')); });
+
+/* ═══════════════════════════════════════════════════════════
+   RATING INPUTS
+══════════════════════════════════════════════════════════ */
+function setRating(v) {
+  document.getElementById('fResultado').value=v;
+  document.getElementById('ratingVal').textContent=v+' / 5';
+  document.querySelectorAll('#ratingInput .s-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.val)<=v));
+}
+function setMrRating(v) {
+  document.getElementById('mrResultado').value=v;
+  document.querySelectorAll('#mrRatingInput .s-btn').forEach((b,i)=>b.classList.toggle('on',i<v));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT / IMPORT
+══════════════════════════════════════════════════════════ */
+function exportar() {
+  const d=JSON.stringify({version:'2.1',exportado:new Date().toISOString(),cafes},null,2);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([d],{type:'application/json'}));
+  a.download=`diario_cafe_${hoy()}.json`; a.click();
+}
+function importarClick() { document.getElementById('importInput').click(); }
+function importar(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      const d=JSON.parse(ev.target.result);
+      const nuevos=d.cafes||d;
+      if(!Array.isArray(nuevos)) throw new Error('Formato inválido');
+      if(confirm(`Importar ${nuevos.length} cafés. ¿Reemplazar datos actuales?`)) {
+        cafes=nuevos.map(c=>({compras:[],misRecetas:[],...c}));
+        guardar(); poblarFiltros(); filtrar();
+      }
+    } catch(err) { alert('Error al importar: '+err.message); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILIDADES
+══════════════════════════════════════════════════════════ */
+function hoy() { return new Date().toISOString().split('T')[0]; }
+function fmtFecha(f) {
+  if(!f) return '';
+  const [y,m,d]=f.split('-');
+  return `${parseInt(d)} ${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(m)-1]} ${y}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
+cargar(); poblarFiltros(); filtrar(); renderGuia();
+</script>
+</body>
+</html>
