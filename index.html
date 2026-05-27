@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Diario de Café · Carla</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Café">
+<link rel="apple-touch-icon" id="appIcon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Geologica:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
@@ -1653,9 +1657,53 @@ function fmtFecha(f) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   ÍCONO — grano de café dibujado en canvas
+══════════════════════════════════════════════════════════ */
+function generarIcono() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 180;
+  const ctx = c.getContext('2d');
+
+  /* Fondo espresso oscuro */
+  ctx.fillStyle = '#1E1208';
+  ctx.fillRect(0, 0, 180, 180);
+
+  /* Grano — elipse con rotación y gradiente cálido */
+  ctx.save();
+  ctx.translate(90, 90);
+  ctx.rotate(-0.18);
+  const grad = ctx.createRadialGradient(-14, -20, 6, 0, 0, 70);
+  grad.addColorStop(0,   '#EDAA6A');
+  grad.addColorStop(0.5, '#C97238');
+  grad.addColorStop(1,   '#7A3F16');
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 50, 64, 0, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+
+  /* Línea central del grano — curva suave */
+  ctx.beginPath();
+  ctx.moveTo(101, 30);
+  ctx.bezierCurveTo(83, 72, 97, 108, 79, 150);
+  ctx.strokeStyle = 'rgba(18, 7, 2, 0.45)';
+  ctx.lineWidth = 5.5;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  const dataUrl = c.toDataURL('image/png');
+  document.getElementById('appIcon').href = dataUrl;
+
+  /* Favicon de paso */
+  const fav = document.createElement('link');
+  fav.rel = 'icon'; fav.href = dataUrl;
+  document.head.appendChild(fav);
+}
+
+/* ═══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
-cargar(); poblarFiltros(); filtrar(); renderGuia();
+cargar(); poblarFiltros(); filtrar(); renderGuia(); generarIcono();
 </script>
 </body>
 </html>
