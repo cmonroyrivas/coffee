@@ -1249,21 +1249,20 @@ function mostrarApp(logueada) {
   document.getElementById('loginScreen').classList.toggle('show', !logueada);
 }
 
-/* Escuchar cambios de sesión (login, logout, refresh automático) */
+async function activarSesion(session) {
+  mostrarApp(true);
+  document.getElementById('userName').textContent = session.user.email.split('@')[0];
+  document.getElementById('userChip').classList.add('show');
+  if (!cafes.length) await cargarDesdeSupabase();
+}
+
+/* Escuchar cambios futuros (magic link callback, logout) */
 supa.auth.onAuthStateChange(async (event, session) => {
-  if (session) {
-    mostrarApp(true);
-    const nombre = session.user.email.split('@')[0];
-    document.getElementById('userName').textContent = nombre;
-    document.getElementById('userChip').classList.add('show');
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      await cargarDesdeSupabase();
-    }
-  } else {
+  if (event === 'SIGNED_IN')  { await activarSesion(session); }
+  if (event === 'SIGNED_OUT') {
     mostrarApp(false);
     document.getElementById('userChip').classList.remove('show');
     cafes = [];
-    renderInventario([]);
   }
 });
 
@@ -1922,11 +1921,17 @@ function generarIcono() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   INIT — la sesión activa dispara onAuthStateChange automáticamente
+   INIT — verificar sesión existente antes de mostrar cualquier pantalla
 ══════════════════════════════════════════════════════════ */
 generarIcono();
-/* Mostrar login por defecto hasta que Supabase confirme sesión */
-mostrarApp(false);
+(async () => {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    await activarSesion(session);
+  } else {
+    mostrarApp(false); /* Sin sesión — mostrar login */
+  }
+})();
 </script>
 </body>
 </html>
