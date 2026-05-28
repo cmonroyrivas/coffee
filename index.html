@@ -101,20 +101,85 @@ a { color: inherit; text-decoration: none; }
   font-size: var(--tx-xs); font-weight: 500; letter-spacing: 2px;
   text-transform: uppercase; color: oklch(72% 0.09 76); font-family: var(--f-body);
 }
-.nav-tabs { display: flex; gap: 2px; }
-.nav-tab {
+/* ── HAMBURGER ───────────────────────────────────────────── */
+.ham-btn {
   background: none; border: none; cursor: pointer;
-  color: oklch(68% 0.05 76); padding: 6px 14px;
-  font-family: var(--f-body); font-size: var(--tx-sm); font-weight: 500;
-  border-radius: var(--r1); transition: color .18s, background .18s;
-  letter-spacing: .3px;
+  padding: 10px; margin: -10px; display: flex; flex-direction: column;
+  gap: 5px; flex-shrink: 0;
 }
-.nav-tab:hover { color: oklch(92% 0.03 76); background: oklch(99% 0 0 / .06); }
-.nav-tab.active {
-  color: var(--gold-2); background: oklch(99% 0 0 / .10);
-  font-weight: 600;
+.ham-line {
+  width: 20px; height: 1.5px; background: oklch(88% 0.02 76);
+  border-radius: 2px; transition: transform .2s, opacity .2s;
 }
-.nav-tab .ti { margin-right: 5px; }
+
+/* ── NAV DRAWER ──────────────────────────────────────────── */
+.nav-overlay {
+  position: fixed; inset: 0; z-index: 299;
+  background: oklch(18% 0.04 50 / .55);
+  opacity: 0; pointer-events: none;
+  transition: opacity .24s;
+}
+.nav-overlay.open { opacity: 1; pointer-events: all; }
+
+.nav-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
+  width: 272px; background: var(--t1);
+  transform: translateX(-100%);
+  transition: transform .26s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.nav-drawer.open { transform: translateX(0); }
+
+.nav-drawer-head {
+  padding: var(--sp5) var(--sp5) var(--sp3);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.nav-drawer-brand {
+  font-family: var(--f-display); font-weight: 800; font-size: 1.3rem;
+  color: oklch(99% 0 0); letter-spacing: .3px; line-height: 1;
+}
+.nav-drawer-sub {
+  font-size: var(--tx-xs); color: oklch(55% 0.04 76); letter-spacing: 1.5px;
+  text-transform: uppercase; font-family: var(--f-body); font-weight: 500;
+  margin-top: 3px;
+}
+.nav-close {
+  background: none; border: none; cursor: pointer;
+  color: oklch(50% 0.03 76); font-size: 1.1rem; padding: 6px;
+  transition: color .15s; flex-shrink: 0;
+}
+.nav-close:hover { color: oklch(80% 0.02 76); }
+
+.nav-items { flex: 1; overflow-y: auto; padding: var(--sp2) var(--sp3) var(--sp4); }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px var(--sp4); border-radius: var(--r2);
+  cursor: pointer; color: oklch(65% 0.035 76);
+  transition: background .14s, color .14s;
+  font-size: var(--tx-sm); font-weight: 500;
+  border: none; background: none; width: 100%;
+  text-align: left; font-family: var(--f-body);
+}
+.nav-item:hover { background: oklch(99% 0 0 / .07); color: oklch(88% 0.02 76); }
+.nav-item.active { background: oklch(99% 0 0 / .11); color: var(--gold-2); font-weight: 600; }
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; opacity: .85; }
+.nav-lbl { flex: 1; }
+
+.nav-divider { height: 1px; background: oklch(99% 0 0 / .07); margin: var(--sp2) var(--sp4); }
+
+.nav-drawer-foot {
+  padding: var(--sp4) var(--sp5);
+  border-top: 1px solid oklch(99% 0 0 / .07); flex-shrink: 0;
+}
+.nav-user { font-size: var(--tx-xs); color: oklch(50% 0.03 76); margin-bottom: var(--sp2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-logout {
+  background: none; border: none; cursor: pointer;
+  font-size: var(--tx-xs); font-weight: 600; color: oklch(50% 0.04 76);
+  font-family: var(--f-body); padding: 0; transition: color .14s;
+}
+.nav-logout:hover { color: oklch(72% 0.04 76); }
 
 /* ── LAYOUT ──────────────────────────────────────────────── */
 .page { max-width: 1300px; margin: 0 auto; padding: var(--sp6) var(--sp5); }
@@ -716,9 +781,6 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 600px) {
   .topbar { padding: 0 var(--sp4); height: 50px; }
   .brand-main { font-size: 1.2rem; }
-  .nav-tab .ti { margin-right: 0; }
-  .nav-tab .tl { display: none; }
-  .nav-tab { padding: 6px 10px; font-size: var(--tx-xs); }
   .page { padding: var(--sp4) var(--sp3); }
   .cafe-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
@@ -731,6 +793,156 @@ a { color: inherit; text-decoration: none; }
   .stat-chip { min-width: 90px; padding: var(--sp2) var(--sp3); }
   .stat-chip .val { font-size: var(--tx-xl); }
 }
+
+/* ── SECCIÓN INTRO (compartida) ──────────────────────────── */
+.sec-intro { margin-bottom: var(--sp8); }
+.sec-intro h2 {
+  font-family: var(--f-display); font-size: var(--tx-3xl); font-weight: 900;
+  color: var(--t1); letter-spacing: -1px; line-height: 1;
+}
+.sec-intro p { font-size: var(--tx-base); color: var(--t3); margin-top: var(--sp2); max-width: 60ch; }
+
+/* ── EXTRACCIONES ────────────────────────────────────────── */
+.ext-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp5); flex-wrap: wrap; gap: var(--sp2); }
+.ext-empty { text-align: center; padding: var(--sp12) 0; color: var(--t3); }
+.ext-empty-icon { font-size: 2.5rem; margin-bottom: var(--sp3); }
+.ext-list { display: flex; flex-direction: column; gap: var(--sp3); }
+.ext-card {
+  background: var(--s0); border-radius: var(--r3);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+  overflow: hidden;
+}
+.ext-card-head {
+  display: flex; align-items: center; gap: var(--sp3);
+  padding: var(--sp4) var(--sp5);
+}
+.ext-process-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.ext-cafe-name { font-family: var(--f-display); font-size: var(--tx-lg); font-weight: 800; color: var(--t1); flex: 1; }
+.ext-date { font-size: var(--tx-xs); color: var(--t3); font-weight: 500; }
+.ext-method { font-size: var(--tx-xs); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ac); }
+.ext-params {
+  display: flex; gap: var(--sp5); flex-wrap: wrap;
+  padding: 0 var(--sp5) var(--sp4);
+}
+.ext-param { }
+.ext-pl { font-size: var(--tx-xs); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--t3); }
+.ext-pv { font-size: var(--tx-sm); color: var(--t1); font-weight: 500; margin-top: 2px; }
+.ext-result-row {
+  padding: var(--sp3) var(--sp5);
+  background: var(--s1); display: flex; align-items: center; gap: var(--sp4);
+}
+.ext-stars { color: var(--gold); letter-spacing: 1px; }
+.ext-notes { font-size: var(--tx-xs); color: var(--t2); flex: 1; font-style: italic; }
+.ext-del { background: none; border: none; cursor: pointer; color: var(--t3); font-size: var(--tx-xs); transition: color .15s; padding: 2px 6px; border-radius: var(--r1); }
+.ext-del:hover { color: oklch(45% 0.16 22); }
+
+/* ── CALCULADORA ─────────────────────────────────────────── */
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp6); }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-panel {
+  background: var(--s0); border-radius: var(--r3);
+  padding: var(--sp6) var(--sp6);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+}
+.calc-panel-title { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: var(--t1); margin-bottom: var(--sp5); }
+.calc-field { margin-bottom: var(--sp4); }
+.calc-field label { display: block; font-size: var(--tx-xs); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--t3); margin-bottom: var(--sp2); }
+.calc-field select, .calc-field input[type=number] {
+  width: 100%; padding: 10px 14px; border-radius: var(--r2);
+  background: var(--s1); border: 1.5px solid var(--border);
+  font-size: var(--tx-base); color: var(--t1); outline: none;
+  font-family: var(--f-body); transition: border-color .15s;
+}
+.calc-field select:focus, .calc-field input:focus { border-color: var(--ac); background: var(--s0); }
+.calc-result {
+  background: var(--t1); border-radius: var(--r3);
+  padding: var(--sp6); margin-top: var(--sp4); display: none;
+}
+.calc-result.show { display: block; }
+.calc-res-row { display: flex; justify-content: space-between; align-items: baseline; padding: var(--sp2) 0; }
+.calc-res-row + .calc-res-row { border-top: 1px solid oklch(99% 0 0 / .07); }
+.calc-res-lbl { font-size: var(--tx-xs); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: oklch(55% 0.03 76); }
+.calc-res-val { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: oklch(99% 0 0); }
+.calc-ratio-bar { display: flex; gap: var(--sp3); align-items: center; margin-top: var(--sp5); flex-wrap: wrap; }
+.ratio-btn {
+  padding: 6px 14px; border-radius: var(--r4); border: 1.5px solid var(--border);
+  background: var(--s1); font-size: var(--tx-sm); font-weight: 600; cursor: pointer;
+  color: var(--t2); transition: all .14s; font-family: var(--f-body);
+}
+.ratio-btn.active { background: var(--t1); color: oklch(99% 0 0); border-color: var(--t1); }
+
+/* ── MAPA ────────────────────────────────────────────────── */
+.mapa-wrap { position: relative; border-radius: var(--r3); overflow: hidden; background: oklch(62% 0.08 220); margin-bottom: var(--sp6); }
+.mapa-wrap svg { display: block; width: 100%; height: auto; }
+.mapa-legend { display: flex; gap: var(--sp4); flex-wrap: wrap; margin-bottom: var(--sp6); align-items: center; }
+.mapa-leg-item { display: flex; align-items: center; gap: var(--sp2); font-size: var(--tx-xs); color: var(--t3); font-weight: 500; }
+.mapa-dot { width: 10px; height: 10px; border-radius: 50%; }
+.origin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp4); }
+.origin-card {
+  background: var(--s0); border-radius: var(--r3); padding: var(--sp4) var(--sp5);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+  display: flex; gap: var(--sp4); align-items: flex-start;
+}
+.origin-flag { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.origin-name { font-family: var(--f-display); font-size: var(--tx-lg); font-weight: 800; color: var(--t1); line-height: 1.1; }
+.origin-region { font-size: var(--tx-xs); color: var(--t3); font-weight: 500; margin-top: 2px; }
+.origin-profile { font-size: var(--tx-sm); color: var(--t2); line-height: 1.55; margin-top: var(--sp2); }
+.origin-mine { font-size: var(--tx-xs); font-weight: 700; color: var(--ac); margin-top: var(--sp2); }
+
+/* ── CATA ────────────────────────────────────────────────── */
+.cata-intro { background: var(--t1); border-radius: var(--r3); padding: var(--sp6) var(--sp6) var(--sp5); margin-bottom: var(--sp6); }
+.cata-intro h3 { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: oklch(99% 0 0); margin-bottom: var(--sp2); }
+.cata-intro p { font-size: var(--tx-sm); color: oklch(72% 0.025 76); line-height: 1.6; max-width: 55ch; }
+.wheel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--sp3); margin-bottom: var(--sp6); }
+.wheel-cat {
+  border-radius: var(--r3); overflow: hidden; cursor: pointer;
+  box-shadow: var(--sh1); transition: transform .15s, box-shadow .15s;
+}
+.wheel-cat:hover { transform: translateY(-2px); box-shadow: var(--sh2); }
+.wheel-cat-head {
+  padding: var(--sp4) var(--sp4) var(--sp3);
+  font-family: var(--f-display); font-weight: 800; font-size: var(--tx-lg);
+  color: oklch(99% 0 0); line-height: 1;
+}
+.wheel-cat-desc { padding: var(--sp3) var(--sp4) var(--sp4); font-size: var(--tx-xs); color: var(--t2); line-height: 1.5; background: var(--s0); }
+.wheel-cat-tags { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 var(--sp4) var(--sp4); background: var(--s0); }
+.wheel-tag { font-size: var(--tx-xs); padding: 2px 7px; border-radius: var(--r4); background: var(--s2); color: var(--t2); font-weight: 600; }
+.cata-guide { background: var(--s0); border-radius: var(--r3); padding: var(--sp6); box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1); }
+.cata-guide h3 { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: var(--t1); margin-bottom: var(--sp5); }
+.cata-steps { display: flex; flex-direction: column; gap: var(--sp4); }
+.cata-step { display: flex; gap: var(--sp4); align-items: flex-start; }
+.cata-step-num { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 900; color: var(--ac); line-height: 1; min-width: 28px; }
+.cata-step-body { }
+.cata-step-title { font-size: var(--tx-base); font-weight: 600; color: var(--t1); margin-bottom: 4px; }
+.cata-step-text { font-size: var(--tx-sm); color: var(--t2); line-height: 1.6; }
+
+/* ── DIARIO ──────────────────────────────────────────────── */
+.diario-year { font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 900; color: oklch(88% 0.02 76 / .18); margin: var(--sp8) 0 var(--sp4); line-height: 1; }
+.diario-year:first-child { margin-top: 0; }
+.diario-timeline { position: relative; padding-left: 28px; }
+.diario-timeline::before {
+  content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.diario-entry {
+  position: relative; margin-bottom: var(--sp4);
+  background: var(--s0); border-radius: var(--r3);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+  padding: var(--sp4) var(--sp5);
+}
+.diario-entry::before {
+  content: ''; position: absolute; left: -24px; top: 18px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--s2); border: 1.5px solid var(--border);
+}
+.diario-entry.rated::before { background: var(--gold); border-color: var(--gold); }
+.diario-entry-date { font-size: var(--tx-xs); color: var(--t3); font-weight: 500; margin-bottom: var(--sp1); }
+.diario-entry-name { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: var(--t1); line-height: 1.1; }
+.diario-entry-meta { font-size: var(--tx-xs); color: var(--t2); margin-top: 4px; }
+.diario-entry-stars { color: var(--gold); font-size: var(--tx-sm); margin-top: var(--sp2); }
+.diario-empty { text-align: center; padding: var(--sp12) 0; color: var(--t3); }
 
 /* ── APRENDE ─────────────────────────────────────────────── */
 .aprende-intro { margin-bottom: var(--sp8); }
@@ -871,29 +1083,71 @@ a { color: inherit; text-decoration: none; }
 
 <!-- TOPBAR -->
 <nav class="topbar">
-  <div class="brand">
+  <button class="ham-btn" onclick="openNav()" aria-label="Menú">
+    <div class="ham-line"></div>
+    <div class="ham-line"></div>
+    <div class="ham-line"></div>
+  </button>
+  <div class="brand" style="position:absolute;left:50%;transform:translateX(-50%)">
     <span class="brand-main">Diario de Café</span>
-    <span class="brand-sub">Carla</span>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" id="tab-inventario" onclick="showTab('inventario')">
-      <span class="ti">☕</span><span class="tl">Inventario</span>
-    </button>
-    <button class="nav-tab" id="tab-recetas" onclick="showTab('recetas')">
-      <span class="ti">📋</span><span class="tl">Recetas</span>
-    </button>
-    <button class="nav-tab" id="tab-estadisticas" onclick="showTab('estadisticas')">
-      <span class="ti">📊</span><span class="tl">Estadísticas</span>
-    </button>
-    <button class="nav-tab" id="tab-aprende" onclick="showTab('aprende')">
-      <span class="ti">📚</span><span class="tl">Aprende</span>
-    </button>
-  </div>
-  <div class="user-chip" id="userChip">
-    <span class="user-name" id="userName"></span>
-    <button class="btn-logout" onclick="logout()">Salir</button>
-  </div>
+  <div style="width:40px"></div>
 </nav>
+
+<!-- Overlay -->
+<div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
+
+<!-- Drawer -->
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-head">
+    <div>
+      <div class="nav-drawer-brand">Diario de Café</div>
+      <div class="nav-drawer-sub">Carla · Especialidad</div>
+    </div>
+    <button class="nav-close" onclick="closeNav()">✕</button>
+  </div>
+
+  <div class="nav-items">
+    <button class="nav-item active" id="tab-inventario" onclick="showTab('inventario')">
+      <span class="nav-icon">☕</span><span class="nav-lbl">Inventario</span>
+    </button>
+    <button class="nav-item" id="tab-extracciones" onclick="showTab('extracciones')">
+      <span class="nav-icon">🧪</span><span class="nav-lbl">Mis Extracciones</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="nav-item" id="tab-recetas" onclick="showTab('recetas')">
+      <span class="nav-icon">📋</span><span class="nav-lbl">Recetas por Proceso</span>
+    </button>
+    <button class="nav-item" id="tab-calculadora" onclick="showTab('calculadora')">
+      <span class="nav-icon">🔢</span><span class="nav-lbl">Calculadora</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="nav-item" id="tab-mapa" onclick="showTab('mapa')">
+      <span class="nav-icon">🌍</span><span class="nav-lbl">Mapa de Orígenes</span>
+    </button>
+    <button class="nav-item" id="tab-cata" onclick="showTab('cata')">
+      <span class="nav-icon">🎨</span><span class="nav-lbl">Guía de Cata</span>
+    </button>
+    <button class="nav-item" id="tab-diario" onclick="showTab('diario')">
+      <span class="nav-icon">📅</span><span class="nav-lbl">Mi Diario</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="nav-item" id="tab-aprende" onclick="showTab('aprende')">
+      <span class="nav-icon">📚</span><span class="nav-lbl">Aprende</span>
+    </button>
+    <button class="nav-item" id="tab-estadisticas" onclick="showTab('estadisticas')">
+      <span class="nav-icon">📊</span><span class="nav-lbl">Estadísticas</span>
+    </button>
+  </div>
+
+  <div class="nav-drawer-foot">
+    <div class="nav-user" id="navUserEmail"></div>
+    <button class="nav-logout" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- elementos legacy usados por JS de auth -->
+<div id="userChip" style="display:none"><span id="userName"></span></div>
 
 <div id="toast" class="toast"></div>
 
@@ -1033,6 +1287,120 @@ a { color: inherit; text-decoration: none; }
       </div>
       <div class="espresso-card" id="espressoCard"></div>
     </div>
+  </div>
+
+  <!-- ═══ EXTRACCIONES ═══ -->
+  <div class="tab-panel" id="panel-extracciones">
+    <div class="sec-intro">
+      <h2>Mis Extracciones</h2>
+      <p>Registro de cada preparación. El único camino para mejorar es ver qué funcionó.</p>
+    </div>
+    <div class="ext-toolbar">
+      <span style="font-size:var(--tx-sm);color:var(--t3)" id="extCount"></span>
+      <button class="btn btn-accent" onclick="abrirExtraccion()">+ Nueva extracción</button>
+    </div>
+    <div id="extList"></div>
+  </div>
+
+  <!-- ═══ CALCULADORA ═══ -->
+  <div class="tab-panel" id="panel-calculadora">
+    <div class="sec-intro">
+      <h2>Calculadora</h2>
+      <p>Entra dosis o agua y obtén los parámetros exactos para tu método y proceso.</p>
+    </div>
+    <div class="calc-grid">
+      <div class="calc-panel">
+        <div class="calc-panel-title">Parámetros</div>
+        <div class="calc-field">
+          <label>Método</label>
+          <select id="calcMetodo" onchange="calcular()">
+            <option value="V60">V60</option>
+            <option value="AeroPress">AeroPress</option>
+            <option value="Prensa Francesa">Prensa Francesa</option>
+            <option value="Nano Outin">Nano Outin</option>
+            <option value="Espresso">Espresso</option>
+            <option value="Cold Brew">Cold Brew</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Proceso del café</label>
+          <select id="calcProceso" onchange="calcular()">
+            <option value="Lavado">Lavado</option>
+            <option value="Natural">Natural</option>
+            <option value="Honey">Honey</option>
+            <option value="Anaeróbico">Anaeróbico</option>
+            <option value="Natural fermentado">Natural fermentado</option>
+            <option value="Despulpado natural">Despulpado natural</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Molino</label>
+          <select id="calcMolino" onchange="calcular()">
+            <option value="C3">Timemore C3</option>
+            <option value="Whirly">Timemore Whirly 01S</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Dosis (g)</label>
+          <input type="number" id="calcDosis" value="15" min="5" max="60" step="0.5" oninput="calcularDesdeDosis()">
+        </div>
+        <div style="text-align:center;font-size:var(--tx-xs);color:var(--t3);margin: -8px 0 var(--sp3)">— o —</div>
+        <div class="calc-field">
+          <label>Agua (ml)</label>
+          <input type="number" id="calcAgua" value="" min="50" max="2000" step="5" oninput="calcularDesdeAgua()" placeholder="Ej: 250">
+        </div>
+        <div class="calc-ratio-bar">
+          <span style="font-size:var(--tx-xs);color:var(--t3);font-weight:600">Ratio:</span>
+          <button class="ratio-btn" data-ratio="12" onclick="setRatio(12)">1:12</button>
+          <button class="ratio-btn active" data-ratio="15" onclick="setRatio(15)">1:15</button>
+          <button class="ratio-btn" data-ratio="17" onclick="setRatio(17)">1:17</button>
+          <button class="ratio-btn" data-ratio="2" onclick="setRatio(2)">1:2 esp.</button>
+          <button class="ratio-btn" data-ratio="8" onclick="setRatio(8)">1:8 cold</button>
+        </div>
+      </div>
+      <div>
+        <div class="calc-result show" id="calcResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MAPA ═══ -->
+  <div class="tab-panel" id="panel-mapa">
+    <div class="sec-intro">
+      <h2>Mapa de Orígenes</h2>
+      <p>Los países que ya exploraste y los que te quedan por descubrir.</p>
+    </div>
+    <div class="mapa-legend">
+      <div class="mapa-leg-item"><div class="mapa-dot" style="background:var(--ac)"></div> En tu colección</div>
+      <div class="mapa-leg-item"><div class="mapa-dot" style="background:var(--border)"></div> Sin explorar aún</div>
+    </div>
+    <div class="origin-grid" id="originGrid"></div>
+  </div>
+
+  <!-- ═══ CATA ═══ -->
+  <div class="tab-panel" id="panel-cata">
+    <div class="sec-intro">
+      <h2>Guía de Cata</h2>
+      <p>Aprende a identificar y articular los sabores que percibes en cada taza.</p>
+    </div>
+    <div class="cata-intro">
+      <h3>¿Por qué catar con método?</h3>
+      <p>La diferencia entre "sabe rico" y "sabe a durazno maduro con acidez de mandarina" es entrenamiento. Cada vez que nombras lo que percibes, tu paladar se vuelve más preciso. La rueda de sabores es tu vocabulario.</p>
+    </div>
+    <div class="wheel-grid" id="wheelGrid"></div>
+    <div class="cata-guide">
+      <h3>Protocolo de cata paso a paso</h3>
+      <div class="cata-steps" id="cataSteps"></div>
+    </div>
+  </div>
+
+  <!-- ═══ DIARIO ═══ -->
+  <div class="tab-panel" id="panel-diario">
+    <div class="sec-intro">
+      <h2>Mi Diario</h2>
+      <p>Tu historia con el café, en orden cronológico.</p>
+    </div>
+    <div id="diarioContent"></div>
   </div>
 
 </div><!-- /page -->
@@ -1186,6 +1554,62 @@ a { color: inherit; text-decoration: none; }
         <input type="hidden" id="cCafeId">
         <div style="display:flex;justify-content:flex-end;gap:var(--sp2);margin-top:var(--sp5);">
           <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalCompra')">Cancelar</button>
+          <button type="submit" class="btn btn-accent">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: EXTRACCIÓN ═══ -->
+<div class="overlay" id="modalExtraccion">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <span class="modal-title">Nueva Extracción</span>
+      <button class="modal-x" onclick="cerrarModal('modalExtraccion')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="extForm" onsubmit="guardarExtraccion(event)">
+        <div class="form-grid">
+          <div class="fg full">
+            <label>Café</label>
+            <select id="extCafeId"></select>
+          </div>
+          <div class="fg"><label>Método</label>
+            <select id="extMetodo">
+              <option>V60</option><option>AeroPress</option>
+              <option>Prensa Francesa</option><option>Nano Outin</option>
+              <option>Espresso</option><option>Cold Brew</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="fg"><label>Fecha</label><input type="date" id="extFecha"></div>
+          <div class="fg"><label>Molino</label>
+            <select id="extMolino">
+              <option value="C3">Timemore C3</option>
+              <option value="Whirly">Timemore Whirly 01S</option>
+            </select>
+          </div>
+          <div class="fg"><label>Molienda</label><input id="extMolienda" placeholder="Ej: 14 clicks / 4.5"></div>
+          <div class="fg"><label>Dosis (g)</label><input id="extDosis" placeholder="Ej: 15g"></div>
+          <div class="fg"><label>Agua (ml)</label><input id="extAgua" placeholder="Ej: 250ml"></div>
+          <div class="fg"><label>Temperatura</label><input id="extTemp" placeholder="Ej: 92°C"></div>
+          <div class="fg"><label>Tiempo total</label><input id="extTiempo" placeholder="Ej: 3:20"></div>
+          <div class="fg full"><label>Mi calificación</label>
+            <div class="rating-inp">
+              <div class="star-btns" id="extRatingInput">
+                <button type="button" class="s-btn" data-val="1" onclick="setExtRating(1)">★</button>
+                <button type="button" class="s-btn" data-val="2" onclick="setExtRating(2)">★</button>
+                <button type="button" class="s-btn" data-val="3" onclick="setExtRating(3)">★</button>
+                <button type="button" class="s-btn" data-val="4" onclick="setExtRating(4)">★</button>
+                <button type="button" class="s-btn" data-val="5" onclick="setExtRating(5)">★</button>
+              </div>
+              <input type="hidden" id="extResultado" value="3">
+            </div>
+          </div>
+          <div class="fg full"><label>Notas</label><textarea id="extNotas" style="min-height:60px" placeholder="¿Qué encontraste? ¿Qué cambiarías?"></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:var(--sp2);margin-top:var(--sp5)">
+          <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalExtraccion')">Cancelar</button>
           <button type="submit" class="btn btn-accent">Guardar</button>
         </div>
       </form>
@@ -1482,8 +1906,11 @@ function mostrarApp(logueada) {
 
 async function activarSesion(session) {
   mostrarApp(true);
-  document.getElementById('userName').textContent = session.user.email.split('@')[0];
+  const name = session.user.email.split('@')[0];
+  document.getElementById('userName').textContent = name;
   document.getElementById('userChip').classList.add('show');
+  const navEmail = document.getElementById('navUserEmail');
+  if (navEmail) navEmail.textContent = session.user.email;
   if (!cafes.length) await cargarDesdeSupabase();
 }
 
@@ -1500,14 +1927,31 @@ supa.auth.onAuthStateChange(async (event, session) => {
 /* ═══════════════════════════════════════════════════════════
    NAVEGACIÓN
 ══════════════════════════════════════════════════════════ */
+/* ── HAMBURGER NAV ──────────────────────────────────────── */
+function openNav() {
+  document.getElementById('navDrawer').classList.add('open');
+  document.getElementById('navOverlay').classList.add('open');
+}
+function closeNav() {
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+}
+
 function showTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
-  document.getElementById('tab-'+id).classList.add('active');
-  if (id === 'estadisticas') renderStats();
-  if (id === 'recetas') renderGuia();
-  if (id === 'aprende') renderAprende();
+  const btn = document.getElementById('tab-'+id);
+  if (btn) btn.classList.add('active');
+  closeNav();
+  if (id === 'estadisticas')  renderStats();
+  if (id === 'recetas')       renderGuia();
+  if (id === 'aprende')       renderAprende();
+  if (id === 'extracciones')  renderExtracciones();
+  if (id === 'calculadora')   { calcular(); }
+  if (id === 'mapa')          renderMapa();
+  if (id === 'cata')          renderCata();
+  if (id === 'diario')        renderDiario();
 }
 function showModalTab(id) {
   document.querySelectorAll('.mtab-panel').forEach(p => p.classList.remove('active'));
@@ -2434,6 +2878,333 @@ function generarFalta() {
       <div class="falta-titulo">${s.titulo}</div>
       <div class="falta-desc">${s.desc}</div>
     </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXTRACCIONES
+══════════════════════════════════════════════════════════ */
+function setExtRating(v) {
+  document.getElementById('extResultado').value = v;
+  document.querySelectorAll('#extRatingInput .s-btn').forEach(b =>
+    b.classList.toggle('on', parseInt(b.dataset.val) <= v));
+}
+
+function abrirExtraccion() {
+  const sel = document.getElementById('extCafeId');
+  sel.innerHTML = cafes.map(c => `<option value="${c.id}">${c.nombre}${c.tostador?' · '+c.tostador:''}</option>`).join('');
+  document.getElementById('extForm').reset();
+  document.getElementById('extFecha').value = hoy();
+  setExtRating(3);
+  abrirModal('modalExtraccion');
+}
+
+function guardarExtraccion(e) {
+  e.preventDefault();
+  const v = id => (document.getElementById(id)||{}).value||'';
+  const cid = v('extCafeId');
+  const cafe = cafes.find(c => c.id === cid); if (!cafe) return;
+  if (!cafe.extracciones) cafe.extracciones = [];
+  cafe.extracciones.push({
+    id: 'EX-'+Date.now(),
+    fecha: v('extFecha'), metodo: v('extMetodo'),
+    molino: v('extMolino'), molienda: v('extMolienda').trim(),
+    dosis: v('extDosis').trim(), agua: v('extAgua').trim(),
+    temp: v('extTemp').trim(), tiempo: v('extTiempo').trim(),
+    resultado: parseInt(v('extResultado'))||3,
+    notas: v('extNotas').trim()
+  });
+  guardar(); cerrarModal('modalExtraccion'); renderExtracciones();
+}
+
+function eliminarExtraccion(cid, eid) {
+  if (!confirm('¿Eliminar esta extracción?')) return;
+  const cafe = cafes.find(c => c.id === cid); if (!cafe) return;
+  cafe.extracciones = (cafe.extracciones||[]).filter(e => e.id !== eid);
+  guardar(); renderExtracciones();
+}
+
+function renderExtracciones() {
+  const all = [];
+  cafes.forEach(c => (c.extracciones||[]).forEach(e => all.push({ ...e, _cafe: c })));
+  all.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+
+  document.getElementById('extCount').textContent =
+    all.length ? all.length + ' extracción' + (all.length>1?'es':'') + ' registrada' + (all.length>1?'s':'') : '';
+
+  if (!all.length) {
+    document.getElementById('extList').innerHTML = `
+      <div class="ext-empty">
+        <div class="ext-empty-icon">🧪</div>
+        <p style="font-size:var(--tx-base);margin-bottom:var(--sp2)">Sin extracciones registradas</p>
+        <p style="font-size:var(--tx-sm)">Cada vez que prepares un café, guarda los parámetros aquí.<br>Con el tiempo verás patrones en lo que te funciona.</p>
+      </div>`;
+    return;
+  }
+
+  const pc = c => ({
+    'Lavado':'var(--p-lavado)','Natural':'var(--p-natural)','Honey':'var(--p-honey)',
+    'Anaeróbico':'var(--p-anaer)','Natural fermentado':'var(--p-fermentado)',
+    'Despulpado natural':'var(--p-despulpado)','Blend':'var(--p-blend)'
+  })[c] || 'var(--p-default)';
+
+  document.getElementById('extList').innerHTML = `<div class="ext-list">${all.map(e => {
+    const stars = '★'.repeat(e.resultado||0) + '☆'.repeat(5-(e.resultado||0));
+    const params = [
+      e.molienda ? {l:'Molienda',v:e.molienda} : null,
+      e.dosis    ? {l:'Dosis',v:e.dosis} : null,
+      e.agua     ? {l:'Agua',v:e.agua} : null,
+      e.temp     ? {l:'Temp',v:e.temp} : null,
+      e.tiempo   ? {l:'Tiempo',v:e.tiempo} : null,
+    ].filter(Boolean);
+    return `
+    <div class="ext-card">
+      <div class="ext-card-head">
+        <div class="ext-process-dot" style="background:${pc(e._cafe.proceso)}"></div>
+        <div class="ext-cafe-name">${e._cafe.nombre}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <div class="ext-method">${e.metodo}</div>
+          <div class="ext-date">${e.fecha?fmtFecha(e.fecha):''}</div>
+        </div>
+      </div>
+      ${params.length ? `<div class="ext-params">${params.map(p=>`<div class="ext-param"><div class="ext-pl">${p.l}</div><div class="ext-pv">${p.v}</div></div>`).join('')}</div>` : ''}
+      <div class="ext-result-row">
+        <div class="ext-stars">${stars}</div>
+        ${e.notas ? `<div class="ext-notes">"${e.notas}"</div>` : '<div class="ext-notes"></div>'}
+        <button class="ext-del" onclick="eliminarExtraccion('${e._cafe.id}','${e.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CALCULADORA
+══════════════════════════════════════════════════════════ */
+let calcRatio = 15;
+
+function setRatio(r) {
+  calcRatio = r;
+  document.querySelectorAll('.ratio-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.ratio) === r));
+  calcularDesdeDosis();
+}
+
+function calcularDesdeDosis() {
+  const d = parseFloat(document.getElementById('calcDosis').value);
+  if (!isNaN(d) && d > 0) {
+    document.getElementById('calcAgua').value = Math.round(d * calcRatio);
+    calcular();
+  }
+}
+
+function calcularDesdeAgua() {
+  const a = parseFloat(document.getElementById('calcAgua').value);
+  if (!isNaN(a) && a > 0) {
+    document.getElementById('calcDosis').value = (a / calcRatio).toFixed(1);
+    calcular();
+  }
+}
+
+function calcular() {
+  const metodo   = document.getElementById('calcMetodo').value;
+  const proceso  = document.getElementById('calcProceso').value;
+  const molino   = document.getElementById('calcMolino').value;
+  const dosis    = parseFloat(document.getElementById('calcDosis').value)||0;
+  const agua     = Math.round(dosis * calcRatio);
+
+  const rec = RECETAS[proceso];
+  const metodoData = rec?.metodos?.[metodo];
+  const g = GRINDERS[molino];
+
+  const TEMP_DEFAULTS = {
+    'Lavado':'91–93°C','Natural':'92–94°C','Honey':'90–92°C',
+    'Anaeróbico':'87–89°C','Natural fermentado':'88–90°C','Despulpado natural':'90–92°C'
+  };
+  const TIEMPO_DEFAULTS = {
+    'V60':'2:30–3:30','AeroPress':'1:30–2:00','Prensa Francesa':'4:00',
+    'Nano Outin':'2:30–3:00','Espresso':'0:25–0:30','Cold Brew':'12–16h'
+  };
+
+  const moliendaVal = metodoData ? metodoData[molino] : '—';
+  const tempVal     = metodoData?.temp || TEMP_DEFAULTS[proceso] || '90–93°C';
+  const tiempoVal   = metodoData?.tiempo || TIEMPO_DEFAULTS[metodo] || '—';
+
+  if (!dosis) { document.getElementById('calcResult').innerHTML = '<div style="color:oklch(60% 0.03 76);font-size:var(--tx-sm);text-align:center;padding:var(--sp4)">Ingresa la dosis para calcular</div>'; return; }
+
+  document.getElementById('calcResult').innerHTML = `
+    <div style="font-size:var(--tx-xs);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:oklch(55% 0.03 76);margin-bottom:var(--sp4)">${metodo} · ${proceso}</div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">Dosis</div>
+      <div class="calc-res-val">${dosis}g</div>
+    </div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">Agua</div>
+      <div class="calc-res-val">${agua}ml</div>
+    </div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">Ratio</div>
+      <div class="calc-res-val">1:${calcRatio}</div>
+    </div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">${g.name}</div>
+      <div class="calc-res-val" style="font-size:var(--tx-lg)">${moliendaVal}</div>
+    </div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">Temperatura</div>
+      <div class="calc-res-val" style="font-size:var(--tx-lg)">${tempVal}</div>
+    </div>
+    <div class="calc-res-row">
+      <div class="calc-res-lbl">Tiempo</div>
+      <div class="calc-res-val" style="font-size:var(--tx-lg)">${tiempoVal}</div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAPA DE ORÍGENES
+══════════════════════════════════════════════════════════ */
+const ORIGINS = [
+  { pais:'Etiopía',      flag:'🇪🇹', region:'África Oriental',   perfil:'Bergamota, jazmín, limón, té blanco, fruta tropical. El origen del café arábica.' },
+  { pais:'Kenya',        flag:'🇰🇪', region:'África Oriental',   perfil:'Grosella negra, tomate maduro, vino tinto, especias. Acidez brillante y única.' },
+  { pais:'Ruanda',       flag:'🇷🇼', region:'África Central',    perfil:'Azúcar de caña, fruta tropical, floral. Cuerpo sedoso, acidez elegante.' },
+  { pais:'Colombia',     flag:'🇨🇴', region:'América del Sur',   perfil:'Caramelo, fruta roja, chocolate, acidez cítrica limpia. Dos cosechas al año.' },
+  { pais:'Peru',         flag:'🇵🇪', region:'América del Sur',   perfil:'Chocolate, caramelo, cítrico suave. Especialidad emergente, excelente valor.' },
+  { pais:'Bolivia',      flag:'🇧🇴', region:'América del Sur',   perfil:'Chocolate amargo, durazno, almendras. Altitud extrema, producción limitada.' },
+  { pais:'Brasil',       flag:'🇧🇷', region:'América del Sur',   perfil:'Chocolate, nuez, caramelo, bajo en acidez. Base clásica del espresso.' },
+  { pais:'Ecuador',      flag:'🇪🇨', region:'América del Sur',   perfil:'Floral, cítrico, cacao. Origen emergente con gran potencial.' },
+  { pais:'Guatemala',    flag:'🇬🇹', region:'América Central',   perfil:'Acidez brillante, fruta, cuerpo completo. Múltiples microclimas únicos.' },
+  { pais:'Honduras',     flag:'🇭🇳', region:'América Central',   perfil:'Dulce, caramelo, fruta tropical. Gran crecimiento en calidad reciente.' },
+  { pais:'Costa Rica',   flag:'🇨🇷', region:'América Central',   perfil:'Acidez brillante, honey process innovador. Solo arábica por ley.' },
+  { pais:'El Salvador',  flag:'🇸🇻', region:'América Central',   perfil:'Bourbon, Pacamara únicos. Dulce, complejo, historia cafetera profunda.' },
+  { pais:'Nicaragua',    flag:'🇳🇮', region:'América Central',   perfil:'Suave, dulce, achocolatado. Coffees de finca con buen perfil de altura.' },
+  { pais:'Panamá',       flag:'🇵🇦', region:'América Central',   perfil:'Hogar de la Geisha. Hacienda La Esmeralda cambió el mundo del café.' },
+  { pais:'México',       flag:'🇲🇽', region:'América del Norte', perfil:'Chocolate, especias, acidez suave. Chiapas y Oaxaca son las zonas clave.' },
+  { pais:'Jamaica',      flag:'🇯🇲', region:'Caribe',            perfil:'Blue Mountain: suave, limpio, equilibrado. Uno de los más caros del mundo.' },
+  { pais:'Indonesia',    flag:'🇮🇩', region:'Asia Pacífico',     perfil:'Terroso, cuerpo completo, especiado. Sumatra Mandheling es el icónico.' },
+  { pais:'Yemen',        flag:'🇾🇪', region:'Medio Oriente',     perfil:'Vino, especias, frutas secas. El origen histórico del café comercial.' },
+];
+
+function renderMapa() {
+  const paisesLC = new Set(cafes.map(c => (c.pais||'').toLowerCase().trim()));
+  const match = o => paisesLC.has(o.pais.toLowerCase()) ||
+    [...paisesLC].some(p => p.includes(o.pais.toLowerCase()) || o.pais.toLowerCase().includes(p));
+
+  document.getElementById('originGrid').innerHTML = ORIGINS.map(o => {
+    const tiene = match(o);
+    const count = cafes.filter(c => {
+      const p = (c.pais||'').toLowerCase();
+      return p.includes(o.pais.toLowerCase()) || o.pais.toLowerCase().includes(p);
+    }).length;
+    return `
+    <div class="origin-card" style="${tiene ? '' : 'opacity:.65'}">
+      <div class="origin-flag">${o.flag}</div>
+      <div>
+        <div class="origin-name">${o.pais}</div>
+        <div class="origin-region">${o.region}</div>
+        <div class="origin-profile">${o.perfil}</div>
+        ${tiene ? `<div class="origin-mine">✓ ${count} café${count>1?'s':''} en tu colección</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GUÍA DE CATA
+══════════════════════════════════════════════════════════ */
+const FLAVOR_CATS = [
+  { name:'Frutal', color:'oklch(58% 0.18 29)', desc:'Frutos tropicales, cítricos, bayas. Suele indicar buen proceso y variedad expresiva.',
+    tags:['Maracuyá','Mango','Limón','Naranja','Cereza','Ciruela','Frutilla','Grosella','Durazno','Piña'] },
+  { name:'Floral', color:'oklch(55% 0.16 338)', desc:'Jazmín, rosas, lavanda. Típico de variedades como Geisha y orígenes etíopes lavados.',
+    tags:['Jazmín','Rosa','Lavanda','Bergamota','Hibisco','Azahar','Madreselva'] },
+  { name:'Dulce', color:'oklch(68% 0.16 72)', desc:'Azúcar, miel, caramelo. Indica buena madurez del fruto y proceso cuidado.',
+    tags:['Caramelo','Miel','Panela','Chocolate blanco','Vainilla','Melaza','Toffee'] },
+  { name:'Nuez y Cacao', color:'oklch(48% 0.10 52)', desc:'Avellana, almendra, chocolate. Común en Brasil, Honduras y procesos naturales suaves.',
+    tags:['Chocolate amargo','Cacao','Avellana','Almendra','Nuez','Maní','Mantequilla'] },
+  { name:'Especiado', color:'oklch(52% 0.14 43)', desc:'Canela, pimienta, clavo. Aparece en anaeróbicos y algunos naturales fermentados.',
+    tags:['Canela','Clavo','Anís','Pimienta','Cardamomo','Nuez moscada'] },
+  { name:'Ácido', color:'oklch(56% 0.19 238)', desc:'Acidez brillante o vinácea. Señal de altura, variedad y buen proceso en lavados.',
+    tags:['Limón','Lima','Mandarina','Manzana verde','Vinagre suave','Tamarindo','Vino blanco'] },
+  { name:'Fermentado', color:'oklch(52% 0.21 302)', desc:'Vino, cerveza, kimchi. Intencional en anaeróbicos, defecto en naturales mal manejados.',
+    tags:['Vino tinto','Ciruela macerada','Levadura','Kombucha','Vinagre intenso','Fermentado tropical'] },
+  { name:'Verde / Vegetal', color:'oklch(50% 0.17 152)', desc:'Hierba, guisantes, madera fresca. Suele indicar subextracción o café poco maduro.',
+    tags:['Hierba','Guisante','Bambú','Madera fresca','Cebolla suave','Tabaco'] },
+];
+
+const CATA_STEPS = [
+  { n:'01', title:'Prepara y espera', text:'Prepara el café con tu método habitual. Espera 2–3 minutos antes de probar — deja que baje la temperatura a ~65°C. A temperatura muy alta, los sabores se aplastan.' },
+  { n:'02', title:'Primera nariz (seco)', text:'Antes de preparar, huele el café molido. Cierra los ojos. ¿Qué categoría aparece? Esa primera impresión suele confirmar el perfil del proceso: floral = lavado etíope, frutal intenso = natural.' },
+  { n:'03', title:'Primera nariz (húmedo)', text:'Inmediatamente después de verter el agua caliente sobre el café, inhala el vapor. El CO₂ liberado arrastra los aromas más volátiles y florales — los más difíciles de detectar en taza fría.' },
+  { n:'04', title:'Primer sorbo: textura', text:'Toma un sorbo y enfócate solo en la textura antes del sabor. ¿Acuoso como el té? ¿Sedoso como la leche? ¿Cremoso? ¿Con taninos que resecan? El cuerpo te dice algo sobre el proceso y el molido.' },
+  { n:'05', title:'Segundo sorbo: dulzura y acidez', text:'¿Hay dulzura al inicio? ¿La acidez es brillante y limpia o áspera? ¿En qué parte de la lengua la sientes? La acidez en los lados = cítrica. Al frente = málica (manzana). En la garganta = fermentativa.' },
+  { n:'06', title:'Retrogusto', text:'Después de tragar, ¿cuánto tiempo permanece el sabor? ¿Qué cambia? Los mejores cafés tienen retrogusto largo y evolucionan: empiezan con fruta, terminan con chocolate o flor. Un retrogusto corto o amargo = sobreextracción o tueste oscuro.' },
+  { n:'07', title:'Taza fría (15–20 min)', text:'Vuelve a la taza cuando está casi fría. Los azúcares se perciben mejor a baja temperatura y la acidez se vuelve más clara. Si el café mejoró frío: buen origen. Si empeoró: posible sobreextracción o agua mal calibrada.' },
+];
+
+function renderCata() {
+  document.getElementById('wheelGrid').innerHTML = FLAVOR_CATS.map(cat => `
+    <div class="wheel-cat">
+      <div class="wheel-cat-head" style="background:${cat.color}">${cat.name}</div>
+      <div class="wheel-cat-desc">${cat.desc}</div>
+      <div class="wheel-cat-tags">${cat.tags.map(t=>`<span class="wheel-tag">${t}</span>`).join('')}</div>
+    </div>`).join('');
+
+  document.getElementById('cataSteps').innerHTML = CATA_STEPS.map(s => `
+    <div class="cata-step">
+      <div class="cata-step-num">${s.n}</div>
+      <div class="cata-step-body">
+        <div class="cata-step-title">${s.title}</div>
+        <div class="cata-step-text">${s.text}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DIARIO CRONOLÓGICO
+══════════════════════════════════════════════════════════ */
+function renderDiario() {
+  const sorted = [...cafes]
+    .filter(c => c.fecha)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
+  const sinFecha = cafes.filter(c => !c.fecha);
+
+  if (!sorted.length && !sinFecha.length) {
+    document.getElementById('diarioContent').innerHTML = `<div class="diario-empty"><p style="font-size:var(--tx-base)">Agrega fechas de compra a tus cafés para ver tu diario cronológico.</p></div>`;
+    return;
+  }
+
+  const byYear = {};
+  sorted.forEach(c => {
+    const y = c.fecha.split('-')[0];
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(c);
+  });
+
+  let html = '';
+  Object.entries(byYear).sort((a,b) => b[0]-a[0]).forEach(([year, list]) => {
+    html += `<div class="diario-year">${year}</div><div class="diario-timeline">`;
+    list.forEach(c => {
+      const stars = c.resultado ? '★'.repeat(c.resultado) : '';
+      const rated = (c.resultado||0) >= 4;
+      const tags = (c.notas||'').split(';').filter(Boolean).slice(0,3).map(n=>`<span class="flavor-tag">${n.trim()}</span>`).join('');
+      html += `
+        <div class="diario-entry${rated?' rated':''}">
+          <div class="diario-entry-date">${fmtFecha(c.fecha)}</div>
+          <div class="diario-entry-name">${c.nombre}</div>
+          <div class="diario-entry-meta">${[c.tostador, c.pais, c.proceso].filter(Boolean).join(' · ')}</div>
+          ${stars ? `<div class="diario-entry-stars">${stars}</div>` : ''}
+          ${tags ? `<div style="margin-top:var(--sp2)">${tags}</div>` : ''}
+        </div>`;
+    });
+    html += `</div>`;
+  });
+
+  if (sinFecha.length) {
+    html += `<div class="diario-year" style="font-size:var(--tx-xl)">Sin fecha</div><div class="diario-timeline">`;
+    sinFecha.forEach(c => {
+      html += `<div class="diario-entry"><div class="diario-entry-name">${c.nombre}</div><div class="diario-entry-meta">${[c.tostador,c.proceso].filter(Boolean).join(' · ')}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('diarioContent').innerHTML = html;
 }
 
 /* ═══════════════════════════════════════════════════════════
