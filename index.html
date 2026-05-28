@@ -731,6 +731,109 @@ a { color: inherit; text-decoration: none; }
   .stat-chip { min-width: 90px; padding: var(--sp2) var(--sp3); }
   .stat-chip .val { font-size: var(--tx-xl); }
 }
+
+/* ── APRENDE ─────────────────────────────────────────────── */
+.aprende-intro { margin-bottom: var(--sp8); }
+.aprende-intro h2 {
+  font-family: var(--f-display); font-size: var(--tx-3xl); font-weight: 900;
+  color: var(--t1); letter-spacing: -1px; line-height: 1;
+}
+.aprende-intro p { font-size: var(--tx-base); color: var(--t3); margin-top: var(--sp2); }
+
+.aprende-section { margin-bottom: var(--sp10); }
+.aprende-section-head {
+  display: flex; align-items: baseline; gap: var(--sp3);
+  margin-bottom: var(--sp5); flex-wrap: wrap;
+}
+.apr-lbl {
+  font-size: var(--tx-xs); font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--t3);
+}
+.apr-title {
+  font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 800;
+  color: var(--t1); letter-spacing: -.5px; line-height: 1;
+}
+
+/* Tip del día */
+.tip-card {
+  background: var(--t1); color: oklch(99% 0 0);
+  border-radius: var(--r3); padding: var(--sp8) var(--sp10);
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp6);
+  align-items: start; overflow: hidden;
+}
+.tip-number {
+  font-family: var(--f-display); font-size: 5rem; font-weight: 900;
+  color: oklch(99% 0 0 / .12); line-height: 1; min-width: 72px; text-align: right;
+  user-select: none;
+}
+.tip-tag {
+  font-size: var(--tx-xs); font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--gold); margin-bottom: var(--sp2);
+}
+.tip-text {
+  font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 700;
+  color: oklch(99% 0 0); line-height: 1.25; margin-bottom: var(--sp3); max-width: 55ch;
+}
+.tip-detail {
+  font-size: var(--tx-sm); color: oklch(78% 0.025 76); line-height: 1.65; max-width: 62ch;
+}
+
+/* Insights */
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp4); }
+.insight-card {
+  background: var(--s0); border-radius: var(--r3); padding: var(--sp5) var(--sp6);
+  display: flex; flex-direction: column; gap: var(--sp2);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+}
+.insight-icon { font-size: 1.4rem; line-height: 1; margin-bottom: var(--sp1); }
+.insight-title { font-family: var(--f-display); font-size: var(--tx-xl); font-weight: 800; color: var(--t1); line-height: 1.15; }
+.insight-body { font-size: var(--tx-sm); color: var(--t2); line-height: 1.6; flex: 1; }
+.insight-cta { font-size: var(--tx-xs); font-weight: 700; color: var(--ac); letter-spacing: .4px; padding-top: var(--sp2); }
+
+/* Falta probar */
+.falta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp4); }
+.falta-card {
+  background: var(--s0); border-radius: var(--r3); padding: var(--sp5) var(--sp6);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+}
+.falta-titulo { font-family: var(--f-display); font-size: var(--tx-lg); font-weight: 800; color: var(--t1); margin-bottom: var(--sp2); line-height: 1.2; }
+.falta-desc { font-size: var(--tx-sm); color: var(--t2); line-height: 1.6; }
+
+/* Variedades */
+.variedad-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: var(--sp5); }
+.variedad-card {
+  background: var(--s0); border-radius: var(--r3);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.variedad-head { padding: var(--sp5) var(--sp6) var(--sp4); background: var(--t1); }
+.variedad-name {
+  font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 900;
+  color: oklch(99% 0 0); letter-spacing: -.3px; line-height: 1;
+}
+.variedad-origin { font-size: var(--tx-xs); color: var(--gold-2); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 4px; }
+.variedad-body { padding: var(--sp5) var(--sp6); flex: 1; }
+.variedad-desc { font-size: var(--tx-sm); color: var(--t2); line-height: 1.65; margin-bottom: var(--sp4); }
+.variedad-sabores { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: var(--sp4); }
+.sab-tag { padding: 3px 9px; border-radius: var(--r4); font-size: var(--tx-xs); font-weight: 600; background: var(--ac-light); color: var(--ac2); }
+.variedad-meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp2) var(--sp4); padding-top: var(--sp3); border-top: 1px solid var(--border); }
+.vmeta-lbl { font-size: var(--tx-xs); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--t3); }
+.vmeta-val { font-size: var(--tx-sm); color: var(--t1); font-weight: 500; margin-top: 2px; }
+
+/* Para espresso */
+.espresso-card {
+  background: var(--s0); border-radius: var(--r3); padding: var(--sp8);
+  box-shadow: inset 0 0 0 1.5px var(--border), var(--sh1);
+}
+.espresso-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp6); margin-top: var(--sp5); }
+.esp-num { font-family: var(--f-display); font-size: var(--tx-2xl); font-weight: 900; color: var(--ac); line-height: 1; margin-bottom: var(--sp2); }
+.esp-title { font-size: var(--tx-base); font-weight: 600; color: var(--t1); margin-bottom: var(--sp1); }
+.esp-body { font-size: var(--tx-sm); color: var(--t2); line-height: 1.6; }
+
+@media (max-width: 560px) {
+  .tip-card { grid-template-columns: 1fr; padding: var(--sp6); }
+  .tip-number { display: none; }
+}
 </style>
 </head>
 <body>
@@ -781,6 +884,9 @@ a { color: inherit; text-decoration: none; }
     </button>
     <button class="nav-tab" id="tab-estadisticas" onclick="showTab('estadisticas')">
       <span class="ti">📊</span><span class="tl">Estadísticas</span>
+    </button>
+    <button class="nav-tab" id="tab-aprende" onclick="showTab('aprende')">
+      <span class="ti">📚</span><span class="tl">Aprende</span>
     </button>
   </div>
   <div class="user-chip" id="userChip">
@@ -878,6 +984,55 @@ a { color: inherit; text-decoration: none; }
       <p>Un vistazo a tu colección de cafés.</p>
     </div>
     <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+
+  <!-- ═══ APRENDE ═══ -->
+  <div class="tab-panel" id="panel-aprende">
+    <div class="aprende-intro">
+      <h2>Aprende</h2>
+      <p>Conocimiento que mejora cada taza que preparas.</p>
+    </div>
+
+    <div class="aprende-section">
+      <div class="aprende-section-head">
+        <span class="apr-lbl">Cada día</span>
+        <span class="apr-title">Tip del día</span>
+      </div>
+      <div id="tipDiaContainer"></div>
+    </div>
+
+    <div class="aprende-section">
+      <div class="aprende-section-head">
+        <span class="apr-lbl">Basado en tu colección</span>
+        <span class="apr-title">Para ti</span>
+      </div>
+      <div class="insight-grid" id="insightGrid"></div>
+    </div>
+
+    <div class="aprende-section">
+      <div class="aprende-section-head">
+        <span class="apr-lbl">Exploración</span>
+        <span class="apr-title">Te falta probar</span>
+      </div>
+      <div class="falta-grid" id="faltaGrid"></div>
+    </div>
+
+    <div class="aprende-section">
+      <div class="aprende-section-head">
+        <span class="apr-lbl">Botánica del café</span>
+        <span class="apr-title">Guía de Variedades</span>
+      </div>
+      <div class="variedad-grid" id="variedadGrid"></div>
+    </div>
+
+    <div class="aprende-section">
+      <div class="aprende-section-head">
+        <span class="apr-lbl">Guía de compra</span>
+        <span class="apr-title">Si quieres hacer espresso</span>
+      </div>
+      <div class="espresso-card" id="espressoCard"></div>
+    </div>
   </div>
 
 </div><!-- /page -->
@@ -1047,12 +1202,12 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 /* ═══════════════════════════════════════════════════════════
-   MOLINOS — settings verificados por fuentes oficiales y reviews
-   C3: ~83 µm/click · Whirly 01S: 30 ajustes, ~25 µm/ajuste (eléctrico)
+   MOLINOS
+   C3: ~83 µm/click · Whirly 01S: escala decimal 1.0–12.0
 ══════════════════════════════════════════════════════════ */
 const GRINDERS = {
-  C3:     { name: 'Timemore C3',          unit: 'clicks',  desc: 'Manual · ~83 µm/click · 36 clicks total' },
-  Whirly: { name: 'Timemore Whirly 01S',  unit: 'ajuste',  desc: 'Eléctrico · 30 ajustes · ~25 µm/ajuste' }
+  C3:     { name: 'Timemore C3',         unit: 'clicks', desc: 'Manual · ~83 µm/click · 36 clicks total' },
+  Whirly: { name: 'Timemore Whirly 01S', unit: 'ajuste', desc: 'Eléctrico · escala decimal 1.0–12.0 · punto de partida, calibra a tu gusto' }
 };
 let grinderActivo = 'C3';
 
@@ -1068,10 +1223,10 @@ const RECETAS = {
     char: 'La pulpa se remueve antes del secado → sabor cristalino, acidez protagonista.',
     tip: '💡 Usa 91–93°C para potenciar la acidez limpia. Flujo constante y bloom corto.',
     metodos: {
-      'V60':            { C3:'13–16', Whirly:'13–17', temp:'91–93°C', dosis:'17–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Flujo controlado resalta sabores limpios sin sobreextracción.', tecnica:'Bloom 30s, 2 fases, flujo constante.' },
-      'AeroPress':      { C3:'12–15', Whirly:'9–13',  temp:'88–90°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida preserva la acidez cítrica y floral.',       tecnica:'Presión lenta 30–40s.' },
-      'Nano Outin':     { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'14–16g', agua:'240ml', tiempo:'2.5–3 min', razon:'Similar a V60 pero con flujo más rápido.',                      tecnica:'Bloom 30s, 2 fases rápidas.' },
-      'Prensa Francesa':{ C3:'20–24', Whirly:'20–24', temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa, molido grueso evita amargor.',              tecnica:'Reposo exacto 4 min, sin agitar.' }
+      'V60':            { C3:'13–16', Whirly:'4.5–6.0', temp:'91–93°C', dosis:'17–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Flujo controlado resalta sabores limpios sin sobreextracción.', tecnica:'Bloom 30s, 2 fases, flujo constante.' },
+      'AeroPress':      { C3:'12–15', Whirly:'3.0–4.5', temp:'88–90°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida preserva la acidez cítrica y floral.',       tecnica:'Presión lenta 30–40s.' },
+      'Nano Outin':     { C3:'13–16', Whirly:'4.0–5.5', temp:'90–92°C', dosis:'14–16g', agua:'240ml', tiempo:'2.5–3 min', razon:'Similar a V60 pero con flujo más rápido.',                      tecnica:'Bloom 30s, 2 fases rápidas.' },
+      'Prensa Francesa':{ C3:'20–24', Whirly:'8.0–10.0',temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa, molido grueso evita amargor.',              tecnica:'Reposo exacto 4 min, sin agitar.' }
     }
   },
   'Natural': {
@@ -1080,9 +1235,9 @@ const RECETAS = {
     char: 'Se seca con toda la cereza → máxima dulzura, fruta intensa, bajo ácido.',
     tip: '💡 Temperatura media-alta y tiempos largos de inmersión. No sobreextrae.',
     metodos: {
-      'Prensa Francesa':{ C3:'20–24', Whirly:'20–24', temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa extrae máxima dulzura y cuerpo.',  tecnica:'Reposo exacto 4 min, sin agitar.' },
-      'AeroPress':      { C3:'14–16', Whirly:'11–14', temp:'90–92°C', dosis:'18–20g', agua:'200ml', tiempo:'1.5–2 min', razon:'Presión suave extrae dulzura sin amargura.',          tecnica:'Presión muy lenta, sin esfuerzo.' },
-      'V60':            { C3:'14–16', Whirly:'14–17', temp:'92–94°C', dosis:'18–20g', agua:'300ml', tiempo:'3.5–4 min', razon:'Flujo lento potencia el cuerpo y la dulzura natural.', tecnica:'Bloom 45s, vierte despacio.' }
+      'Prensa Francesa':{ C3:'20–24', Whirly:'8.0–10.0',temp:'93–95°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Inmersión completa extrae máxima dulzura y cuerpo.',  tecnica:'Reposo exacto 4 min, sin agitar.' },
+      'AeroPress':      { C3:'14–16', Whirly:'3.5–4.5', temp:'90–92°C', dosis:'18–20g', agua:'200ml', tiempo:'1.5–2 min', razon:'Presión suave extrae dulzura sin amargura.',          tecnica:'Presión muy lenta, sin esfuerzo.' },
+      'V60':            { C3:'14–16', Whirly:'5.0–6.5', temp:'92–94°C', dosis:'18–20g', agua:'300ml', tiempo:'3.5–4 min', razon:'Flujo lento potencia el cuerpo y la dulzura natural.', tecnica:'Bloom 45s, vierte despacio.' }
     }
   },
   'Honey': {
@@ -1091,9 +1246,9 @@ const RECETAS = {
     char: 'Pulpa removida, mucílago permanece → equilibrio único entre dulzura y acidez.',
     tip: '💡 Temperaturas medias (89–92°C). El Honey tiene su propio balance — no lo fuerces.',
     metodos: {
-      'V60':        { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Control fino destaca el balance natural del Honey.',   tecnica:'Bloom 30s, flujo moderado y constante.' },
-      'AeroPress':  { C3:'13–15', Whirly:'10–13', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Mantiene ambos perfiles sin que uno domine.',          tecnica:'Presión media.' },
-      'Nano Outin': { C3:'13–16', Whirly:'13–16', temp:'89–91°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Ideal para explorar el perfil equilibrado.',           tecnica:'Flujo moderado a rápido.' }
+      'V60':        { C3:'13–16', Whirly:'4.5–6.0', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Control fino destaca el balance natural del Honey.',   tecnica:'Bloom 30s, flujo moderado y constante.' },
+      'AeroPress':  { C3:'13–15', Whirly:'3.0–4.5', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Mantiene ambos perfiles sin que uno domine.',          tecnica:'Presión media.' },
+      'Nano Outin': { C3:'13–16', Whirly:'4.0–5.5', temp:'89–91°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Ideal para explorar el perfil equilibrado.',           tecnica:'Flujo moderado a rápido.' }
     }
   },
   'Anaeróbico': {
@@ -1102,9 +1257,9 @@ const RECETAS = {
     char: 'Fermentación anaeróbica → sabores intensificados, notas tropicales únicas.',
     tip: '💡 TEMPERATURA BAJA (87–89°C). El anaeróbico ya tiene mucho que decir — el agua caliente lo abruma.',
     metodos: {
-      'V60':        { C3:'13–15', Whirly:'12–15', temp:'87–89°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Agua fría previene sobreextracción de la complejidad.',      tecnica:'Bloom cuidadoso, flujo lento y deliberado.' },
-      'AeroPress':  { C3:'12–14', Whirly:'9–12',  temp:'85–87°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Extracción rápida + agua fría = claridad de notas complejas.', tecnica:'Presión consistente, no muy lenta.' },
-      'Nano Outin': { C3:'13–15', Whirly:'12–15', temp:'87–89°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Control de temperatura crítico para no abrumar el perfil.',   tecnica:'NO subas la temp. Bloom largo 40s.' }
+      'V60':        { C3:'13–15', Whirly:'4.0–5.5', temp:'87–89°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min',  razon:'Agua fría previene sobreextracción de la complejidad.',      tecnica:'Bloom cuidadoso, flujo lento y deliberado.' },
+      'AeroPress':  { C3:'12–14', Whirly:'2.8–4.0', temp:'85–87°C', dosis:'16–18g', agua:'200ml', tiempo:'1.5–2 min',  razon:'Extracción rápida + agua fría = claridad de notas complejas.', tecnica:'Presión consistente, no muy lenta.' },
+      'Nano Outin': { C3:'13–15', Whirly:'4.0–5.0', temp:'87–89°C', dosis:'15–17g', agua:'240ml', tiempo:'2.5–3 min',  razon:'Control de temperatura crítico para no abrumar el perfil.',   tecnica:'NO subas la temp. Bloom largo 40s.' }
     }
   },
   'Natural fermentado': {
@@ -1113,8 +1268,8 @@ const RECETAS = {
     char: 'Doble fermentación → intensificación máxima, frutas exóticas, complejidad extrema.',
     tip: '💡 Temperatura BAJA + bloom largo (45s) para desgasificar bien antes de extraer.',
     metodos: {
-      'V60':            { C3:'13–15', Whirly:'13–16', temp:'88–90°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Balance entre claridad y complejidad fermentativa.', tecnica:'Bloom largo 45s, flujo deliberado.' },
-      'Prensa Francesa':{ C3:'20–24', Whirly:'20–23', temp:'92–94°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Cuerpo completo complementa la complejidad.',       tecnica:'Reposo total, sin agitar.' }
+      'V60':            { C3:'13–15', Whirly:'4.5–5.5', temp:'88–90°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Balance entre claridad y complejidad fermentativa.', tecnica:'Bloom largo 45s, flujo deliberado.' },
+      'Prensa Francesa':{ C3:'20–24', Whirly:'8.0–9.5', temp:'92–94°C', dosis:'30–35g', agua:'500ml', tiempo:'4 min',     razon:'Cuerpo completo complementa la complejidad.',       tecnica:'Reposo total, sin agitar.' }
     }
   },
   'Despulpado natural': {
@@ -1123,8 +1278,8 @@ const RECETAS = {
     char: 'Punto intermedio entre Lavado y Natural — cuerpo presente con algo de acidez.',
     tip: '💡 Similar a Honey: explora ambos lados del perfil. V60 funciona muy bien aquí.',
     metodos: {
-      'V60':       { C3:'13–16', Whirly:'13–16', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Control fino destaca el balance equilibrado.', tecnica:'Estándar V60, flujo moderado.' },
-      'AeroPress': { C3:'13–15', Whirly:'10–13', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Rapidez sin comprometer el balance.',          tecnica:'Presión media.' }
+      'V60':       { C3:'13–16', Whirly:'4.5–6.0', temp:'90–92°C', dosis:'18–20g', agua:'300ml', tiempo:'3–3.5 min', razon:'Control fino destaca el balance equilibrado.', tecnica:'Estándar V60, flujo moderado.' },
+      'AeroPress': { C3:'13–15', Whirly:'3.0–4.5', temp:'89–91°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Rapidez sin comprometer el balance.',          tecnica:'Presión media.' }
     }
   },
   'Blend': {
@@ -1133,8 +1288,8 @@ const RECETAS = {
     char: 'Combinación de orígenes — sigue las instrucciones del tostador si disponibles.',
     tip: '💡 V60 es tu mejor aliado para blends: su versatilidad maneja múltiples perfiles.',
     metodos: {
-      'V60':       { C3:'13–16', Whirly:'13–17', temp:'90–93°C', dosis:'18–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Versatilidad del V60 para múltiples perfiles.',    tecnica:'Bloom 30s, flujo constante.' },
-      'AeroPress': { C3:'12–15', Whirly:'9–13',  temp:'88–90°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida mantiene el balance del blend.', tecnica:'Presión consistente.' }
+      'V60':       { C3:'13–16', Whirly:'4.5–6.0', temp:'90–93°C', dosis:'18–20g', agua:'300ml', tiempo:'3–4 min',   razon:'Versatilidad del V60 para múltiples perfiles.',    tecnica:'Bloom 30s, flujo constante.' },
+      'AeroPress': { C3:'12–15', Whirly:'3.0–4.5', temp:'88–90°C', dosis:'17–19g', agua:'200ml', tiempo:'1.5–2 min', razon:'Extracción rápida mantiene el balance del blend.', tecnica:'Presión consistente.' }
     }
   }
 };
@@ -1352,6 +1507,7 @@ function showTab(id) {
   document.getElementById('tab-'+id).classList.add('active');
   if (id === 'estadisticas') renderStats();
   if (id === 'recetas') renderGuia();
+  if (id === 'aprende') renderAprende();
 }
 function showModalTab(id) {
   document.querySelectorAll('.mtab-panel').forEach(p => p.classList.remove('active'));
@@ -1994,6 +2150,290 @@ function generarIcono() {
   const fav = document.createElement('link');
   fav.rel = 'icon'; fav.href = dataUrl;
   document.head.appendChild(fav);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APRENDE — datos
+══════════════════════════════════════════════════════════ */
+const TIPS_DIARIOS = [
+  { tag:'Método · V60', texto:'El bloom no es opcional', detalle:'Empieza siempre con 2–3× el peso del café en agua (si usas 15g → 30–45ml) a 93°C durante 30–45 segundos. Es el CO₂ escapando: si lo salteas, las burbujas bloquean el flujo y obtienes extracción despareja. Si no ves burbujas, el café ya está muy fresco.' },
+  { tag:'Compras', texto:'La fecha de tueste importa más que el precio', detalle:'Busca cafés con menos de 4–8 semanas de tostado para filtro, y 10–21 días de reposo para espresso (el CO₂ extra dificulta la extracción). Un café de $4.000 fresco supera a uno de $12.000 con 3 meses en bodega.' },
+  { tag:'Proceso · Lavado', texto:'El lavado te muestra el terroir sin filtros', detalle:'Al remover el mucílago con agua, el café expresa directamente las características de su suelo, altitud y variedad. Es el proceso más "honesto": si la variedad es interesante o la finca tiene carácter, lo verás en taza.' },
+  { tag:'Proceso · Natural', texto:'Natural no significa fermentado: significa frutal', detalle:'El grano se seca dentro de la fruta por semanas. El resultado es más cuerpo, dulzura intensa y notas de fruta madura. Requiere control milimétrico del secado — los errores se notan como fermentación en taza.' },
+  { tag:'Método · AeroPress', texto:'La presión del AeroPress no es espresso', detalle:'El AeroPress genera ~0.3–0.7 bares vs los 9 bares del espresso. Su magia está en la inmersión total + filtrado limpio. Invertirlo (inverted method) da más control sobre el tiempo de contacto. Muele más grueso de lo que crees.' },
+  { tag:'Sciencia', texto:'La temperatura del agua cambia el perfil del café', detalle:'88°C extrae ácidos suaves y dulzura — ideal para naturales y anaeróbicos florales. 93–96°C extrae más estructura y amargor — ideal para lavados de altura. Prueba el mismo café a 90°C y 95°C: son perfiles completamente distintos.' },
+  { tag:'Variedades', texto:'Geisha no es solo moda: tiene razones botánicas', detalle:'La variedad Geisha tiene hoja alargada y perfil floral único por su genética etíope. Crece mejor sobre 1700 msnm y es muy susceptible a enfermedades — produce poco y cuesta caro. Sus notas de jazmín y bergamota son reales, no marketing.' },
+  { tag:'Método · Prensa Francesa', texto:'La prensa francesa extrae los aceites que el filtro retiene', detalle:'Sin papel, los aceites naturales pasan a la taza — eso da el cuerpo característico. La desventaja: sin filtrar los finos, puede haber sedimento. Espera 4 minutos, no revuelvas después de verter, y sirve lentamente.' },
+  { tag:'Molienda', texto:'La consistencia de molienda importa más que el número', detalle:'Un molino de burr muele más uniformemente que uno de cuchillas. Los finos (partículas pequeñas) sobreextraen y dan amargor. Con un buen molino cada ajuste es predecible — y eso cambia todo.' },
+  { tag:'Altitud', texto:'A más altitud, más densidad y acidez más brillante', detalle:'A mayor altitud (1500–2200 msnm) las temperaturas bajas ralentizan el desarrollo del fruto. El grano crece más lento, acumula más azúcares, es más denso y tiene acidez más compleja. Los SHB (Strictly Hard Bean, +1400m) son los preferidos en especialidad.' },
+  { tag:'Proceso · Honey', texto:'El honey es el punto medio entre lavado y natural', detalle:'Se remueve la pulpa pero se deja parte del mucílago durante el secado. Más mucílago = más dulzura, más complejidad. Existen honey amarillo (menos mucílago), rojo y negro. El negro puede tener tanta fruta como un natural.' },
+  { tag:'Recetas', texto:'El ratio agua:café es tu primer parámetro', detalle:'1:15 (1g de café por 15ml de agua) es el punto de partida para la mayoría de métodos de filtro. Para una taza de 250ml necesitas ~16–17g de café. El espresso usa 1:2 (18g → 36ml). Ajusta el ratio antes de cambiar otros parámetros.' },
+  { tag:'Método · Nano Outin', texto:'El Nano Outin es inmersión controlada: no lo apures', detalle:'Este método de doble cámara funciona por presión diferencial: el café se extrae en la cámara superior y luego baja por gravedad. La clave es la molienda media y el tiempo: 3–4 minutos para un filtrado limpio y equilibrado.' },
+  { tag:'Agua', texto:'El agua filtrada no es perfecta: el café necesita minerales', detalle:'El agua completamente desmineralizada extrae mal el café — los minerales actúan como vectores de sabor. Lo ideal es 75–150 TDS, con predominancia de magnesio (capta aromas). El agua embotellada baja en minerales suele funcionar bien.' },
+  { tag:'Fermentación', texto:'Anaeróbico significa fermentación sin oxígeno', detalle:'El café anaeróbico se fermenta en tanques sellados donde las levaduras trabajan sin O₂. El resultado son sabores más intensos: ciruela, vino, cacao. Es difícil de dominar — cuando está bien hecho es extraordinario; mal hecho, es feo.' },
+  { tag:'Sciencia', texto:'La extracción tiene tres fases', detalle:'1) Acidez y brillantez salen primero. 2) Azúcares y dulzura en el medio. 3) Amargos y taninos al final. Si tu café amarga, sobreextraíste. Si es plano o agrio, subextraíste. El objetivo: ~18–22% extracción total.' },
+  { tag:'Origen · Colombia', texto:'Colombia produce dos cosechas al año en muchas regiones', detalle:'Gracias a la geografía andina, regiones como Huila, Nariño y Cauca cosechan en abril-junio y en octubre-diciembre. Huila es conocida por acidez brillante; Nariño por notas florales e intensidad. Dos temporadas = más frescura en el mercado.' },
+  { tag:'Variedades · Colombia', texto:'Tabi y Pink Bourbon son variedades colombianas únicas', detalle:'Tabi es un híbrido creado por Cenicafé (Typica × Bourbon × Timor): buena taza y resistencia a enfermedades. Pink Bourbon es misteriosa — genética debatida, perfil floral y balance ácido/dulce la han vuelto muy buscada.' },
+  { tag:'Compras', texto:'El tostador importa tanto como el origen', detalle:'Un buen café puede ser arruinado por un tueste oscuro que carboniza los azúcares. Para especialidad, busca tuestes claros a medios que preserven los sabores del origen. "Intenso" o "fuerte" sin mencionar el origen es señal de tueste oscuro genérico.' },
+  { tag:'Método · Espresso', texto:'Para espresso busca cafés con 14–21 días de reposo', detalle:'El café recién tostado tiene mucho CO₂ que impide la extracción uniforme. Espera al menos 10 días, idealmente 14–21 para tuestes claros. Señal de que está listo: la crema es densa y color avellana, no clara llena de burbujas grandes.' },
+  { tag:'Origen · Etiopía', texto:'Etiopía es el origen del café: la diversidad genética es única', detalle:'El café arábica se originó en las selvas de Kaffa. Hay miles de variedades silvestres sin catalogar. Los lavados de Yirgacheffe son famosos por bergamota, limón y flor de azahar. Los naturales de Sidamo y Guji tienen fruta tropical intensa.' },
+  { tag:'Variedades', texto:'Bourbon y Typica son las dos variedades madre del arábica', detalle:'Casi todas las variedades modernas descienden de estas dos. Bourbon llegó de Etiopía a la isla Bourbon en el S.XVIII. Typica viajó vía Yemen, India y Java. Ambas dan tazas complejas y son la base genética de Caturra, Catuai, Mundo Novo y decenas más.' },
+  { tag:'Proceso', texto:'El despulpado natural es el proceso dominante en Brasil', detalle:'Similar al honey: se remueve la pulpa mecánicamente pero se deja algo del mucílago. Produce cafés con buen cuerpo, dulzura de chocolate y nuez, menor acidez que los lavados — muy consistentes para espresso. Brasil no podría producir lo que produce sin este proceso.' },
+  { tag:'Sciencia', texto:'El color del tueste afecta la solubilidad', detalle:'Los tuestes claros tienen grano más duro y menos soluble — necesitas agua más caliente o más tiempo. Los tuestes oscuros son más solubles — extraen rápido y se sobreextraen con facilidad. Si tienes un natural oscuro que amarga, baja la temperatura antes de cambiar la molienda.' },
+  { tag:'Almacenamiento', texto:'El orden de enemigos del café: oxígeno, humedad, luz, temperatura', detalle:'Guarda en recipiente hermético opaco, temperatura ambiente (no el refrigerador: la condensación es peor que el calor). Una vez molido, el café pierde 70% de sus aromas en 15 minutos — muele justo antes de preparar.' },
+  { tag:'Origen · Kenia', texto:'Los kenianos SL28 y SL34 tienen sabor a grosella negra', detalle:'Los laboratorios Scott desarrollaron estas variedades en los años 30–40. Resultado inesperado: acidez intensa con notas de grosella negra, tomate maduro y vino. El sistema de subastas kenianas (AA, AB por tamaño de grano) garantiza alta calidad.' },
+  { tag:'Método', texto:'Más grueso no siempre resuelve el amargor', detalle:'El error común: si amarga, moler más grueso. Pero si la temperatura es muy alta o el tiempo de contacto largo, igual sobreextraes. Los dos parámetros van juntos. Primero baja la temperatura 2°C antes de cambiar la molienda.' },
+  { tag:'Proceso · Anaeróbico', texto:'Los anaeróbicos tienen notas de fermentación intencional', detalle:'Cuando ves "anaeróbico natural fermentado": espera ciruela macerada, vino tinto, cacao. Es un perfil polarizante. En métodos de filtro a baja temperatura (88–90°C) el perfil se vuelve más suave y complejo.' },
+  { tag:'Recetas', texto:'La vertida en el V60 no es solo técnica: es ritmo', detalle:'30g bloom → espera 30s → 70g en espiral (0:30–1:00) → 100g (1:00–1:30) → 150g (1:30–2:00). Las vertidas en espiral distribuyen el agua mejor que verter siempre al centro. Tiempo total ideal: 2:30–3:00 min para 15g de café.' },
+  { tag:'Compras', texto:'Los cafés de doble fermentación son más expresivos', detalle:'La fermentación extendida (24–72h en tanque sellado) amplifica los sabores del café. Busca: "fermentación larga", "maceración carbónica", "anaeróbico doble". Son más intensos, más complejos, y un poco más difíciles de extraer bien.' },
+  { tag:'Origen · Perú', texto:'Perú está emergiendo en el mapa de la especialidad', detalle:'Cajamarca, San Martín y Amazonas producen cafés de altura con notas limpias, cítricos y florales. Principalmente de pequeños agricultores en cooperativas. Excelente relación calidad-precio: especialidad a precios más accesibles que Colombia o Kenia.' },
+  { tag:'Sciencia', texto:'El filtro de papel también filtra aceites', detalle:'Los aceites del café contienen cafestol y kahweol, que elevan el colesterol LDL. El filtro de papel los retiene casi completamente. La prensa francesa los deja pasar. Dicho esto: una o dos tazas diarias de prensa francesa no tienen impacto clínico significativo en adultos sanos.' },
+  { tag:'Método', texto:'Precalentar siempre: la temperatura estable cambia el resultado', detalle:'Una cafetera fría absorbe calor del agua, bajando la temperatura real de extracción 3–5°C por debajo de lo que configuraste. Vierte agua caliente en el dripper, la jarra y la taza antes de empezar — notarás la diferencia desde el primer sorbo.' },
+  { tag:'Variedades', texto:'Caturra muestra exactamente lo que le das', detalle:'Mutación natural de Bourbon descubierta en Brasil. Compacta, productiva, sensible al manejo. A baja altitud puede ser plana. A 1600+ msnm con buen proceso: dulzura de caramelo y acidez cítrica limpia. No tiene los florales del Geisha, pero tiene carácter cuando está bien cultivada.' },
+  { tag:'Origen · Guatemala', texto:'Guatemala tiene microclimas que producen cafés muy distintos', detalle:'Huehuetenango (1500–2000msnm) produce cafés con acidez brillante y notas frutales. Antigua tiene suelo volcánico que da cuerpo y dulzura. Cobán es húmedo y produce cafés más suaves y achocolatados. Tres perfiles completamente distintos en el mismo país.' },
+  { tag:'Método', texto:'La WDT mejora el espresso más que cualquier otro cambio menor', detalle:'Revolver el café molido en el portafiltro con una aguja antes de tamp elimina los grumos. Los grumos crean canales donde el agua fluye más rápido, generando extracción despareja. Cuesta $0 si usas una aguja de disección — el resultado: crema más uniforme.' },
+  { tag:'Sciencia', texto:'El café robusta no es inferior: es diferente', detalle:'Coffea canephora tiene más cafeína (2×), menos azúcares, más amargos. Alta calidad de robusta de Vietnam o Uganda puede ser compleja, con notas de chocolate y especias. Los blends de espresso italianos clásicos usan 10–30% robusta para crema y cuerpo.' },
+  { tag:'Método · Cold Brew', texto:'El cold brew se extrae con tiempo, no con temperatura', detalle:'Con agua fría (4–20°C) durante 12–24 horas extraes principalmente dulzura y compuestos de bajo amargor. Los ácidos delicados quedan en el grano — perfil muy distinto al mismo café en caliente. Ratio 1:8, molienda gruesa, refrigerador hasta 2 semanas.' },
+  { tag:'Origen · Costa Rica', texto:'Costa Rica formalizó el honey process y el micro-lote', detalle:'Los micro-beneficios costarricenses desarrollaron el honey a escala. La ley prohíbe el cultivo de robusta — solo arábica. Tarrazu es la región más famosa por acidez brillante; Tres Ríos produce cafés más sutiles con notas de fruta roja.' },
+  { tag:'Variedades', texto:'Pacamara: el grano gigante de El Salvador', detalle:'Híbrido de Pacas y Maragogipe. Sus granos son los más grandes del mundo del café. El perfil sorprende: a pesar del tamaño, es elegante, con buena acidez y notas que van de floral a chocolatada según el proceso.' },
+  { tag:'Recetas', texto:'En espresso: primero calibra el tiempo, luego todo lo demás', detalle:'Para 18g de café → 36ml, el tiempo objetivo es 25–30 segundos. Si extrae en 15s → muele más fino. Si tarda 40s+ → más grueso. La presión (9 bars) se mantiene constante; la resistencia del café la controlas con la molienda.' },
+];
+
+const VARIEDADES = [
+  {
+    nombre: 'Geisha / Gesha',
+    origen: 'Etiopía → Panamá',
+    desc: 'La variedad más codiciada del café de especialidad. Originaria de Gesha, Etiopía, su potencial se descubrió en Hacienda La Esmeralda, Panamá, en 2004. Su perfil es inmediatamente reconocible y difícil de igualar. Crece mejor sobre 1800 msnm, produce poco y es muy susceptible a enfermedades — todo eso justifica el precio.',
+    sabores: ['Jazmín', 'Bergamota', 'Té blanco', 'Maracuyá', 'Limón'],
+    metodos: 'V60, AeroPress invertido',
+    proceso: 'Lavado o Natural',
+    altitud: 'Sobre 1700 msnm',
+    nota: 'Cualquier error de extracción se amplifica — exige técnica afinada'
+  },
+  {
+    nombre: 'Caturra',
+    origen: 'Brasil → Colombia',
+    desc: 'Mutación natural de Bourbon descubierta en Minas Gerais, Brasil. Es la variedad base de muchos cafés colombianos: compacta, productiva, honesta. A baja altitud puede ser plana; a 1600+ msnm con buen proceso muestra dulzura de caramelo y acidez cítrica limpia.',
+    sabores: ['Caramelo', 'Cítrico', 'Cereza', 'Chocolate', 'Frutos secos'],
+    metodos: 'V60, Prensa Francesa',
+    proceso: 'Lavado (mejor expresión a altura)',
+    altitud: '1200–2000 msnm',
+    nota: 'Workhouse del café de especialidad: versátil y honesta'
+  },
+  {
+    nombre: 'Bourbon',
+    origen: 'Isla Reunión (Francia)',
+    desc: 'Una de las dos variedades madre del arábica moderno. Llegó de Etiopía a la isla Bourbon (hoy Reunión) en el S.XVIII. Produce tazas complejas con dulzura y acidez brillante de fruta roja. Las variantes amarilla y naranja añaden aún más dulzura.',
+    sabores: ['Fruta roja', 'Chocolate', 'Caramelo', 'Madera suave', 'Floral sutil'],
+    metodos: 'V60, Chemex, AeroPress',
+    proceso: 'Lavado o Natural',
+    altitud: '1200–1800 msnm',
+    nota: 'Base genética de Caturra, Catuai y decenas de variedades más'
+  },
+  {
+    nombre: 'Typica',
+    origen: 'Etiopía → Asia → América',
+    desc: 'La otra gran variedad madre. Viajó de Etiopía a Yemen, luego a India, Java, y de ahí al mundo entero. Sus tazas son delicadas, limpias, con dulzura de vainilla y acidez suave. Produce poco (gran desventaja comercial) pero a plena altura puede ser extraordinaria.',
+    sabores: ['Vainilla', 'Floral suave', 'Limón suave', 'Miel', 'Chocolate blanco'],
+    metodos: 'V60, Chemex',
+    proceso: 'Lavado (expresa mejor su delicadeza)',
+    altitud: '1400–2000 msnm',
+    nota: 'Bajo rendimiento pero elegancia difícil de igualar'
+  },
+  {
+    nombre: 'Pink Bourbon',
+    origen: 'Colombia',
+    desc: 'Variedad de identidad genética debatida — se cree híbrido de Bourbon rojo y amarillo con posible influencia etíope. Ha ganado popularidad enorme en el mercado colombiano por su perfil floral intenso, balance ácido/dulce perfecto y retrogusto largo.',
+    sabores: ['Durazno', 'Rosa', 'Maracuyá', 'Guayaba', 'Citronella'],
+    metodos: 'V60, AeroPress a baja temperatura',
+    proceso: 'Lavado o Honey',
+    altitud: '1500–2100 msnm',
+    nota: 'Muy de moda — busca productores serios para los mejores ejemplos'
+  },
+  {
+    nombre: 'Tabi',
+    origen: 'Colombia (Cenicafé)',
+    desc: 'Creada por Cenicafé como híbrido de Typica, Bourbon y Timor. Su nombre significa "bueno" en dialecto páez. Tiene resistencia a enfermedades, alta productividad y un perfil de taza complejo con estructura y dulzura. Es el futuro práctico del café colombiano de calidad.',
+    sabores: ['Chocolate', 'Canela', 'Fruta tropical', 'Almizcle', 'Caramelo'],
+    metodos: 'V60, Prensa Francesa, Espresso',
+    proceso: 'Lavado, Natural o Honey',
+    altitud: '1500–2000 msnm',
+    nota: 'Versatilidad excepcional: funciona bien en cualquier método'
+  },
+  {
+    nombre: 'SL28 / SL34',
+    origen: 'Kenia (Laboratorios Scott)',
+    desc: 'Desarrolladas por los Laboratorios Scott en los años 1930–40, estas variedades kenianas tienen una identidad única: acidez intensa con notas de grosella negra, tomate maduro y vino. Son muy valoradas en el mercado de exportación y difíciles de encontrar fuera de Kenia.',
+    sabores: ['Grosella negra', 'Tomate', 'Vino tinto', 'Limón negro', 'Especias'],
+    metodos: 'V60, Chemex (realza la acidez)',
+    proceso: 'Lavado (casi siempre)',
+    altitud: '1500–2100 msnm',
+    nota: 'Para quienes aman la acidez brillante — no para todos, pero memorables'
+  },
+  {
+    nombre: 'Pacamara',
+    origen: 'El Salvador',
+    desc: 'Híbrido de Pacas (Bourbon salvadoreño compacto) y Maragogipe (mutación Typica de granos gigantes). Sus granos son los más grandes del mundo del café. El perfil sorprende: a pesar del tamaño, es elegante y complejo, con acidez clara y notas que van de floral a chocolatada según el proceso.',
+    sabores: ['Floral', 'Frutas tropicales', 'Chocolate amargo', 'Vainilla', 'Madera dulce'],
+    metodos: 'V60, AeroPress',
+    proceso: 'Lavado o Natural',
+    altitud: '1200–1800 msnm',
+    nota: 'Los granos grandes piden molienda calibrada — no asumir por el tamaño'
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════
+   APRENDE — render
+══════════════════════════════════════════════════════════ */
+function renderAprende() {
+  /* Tip del día — rotación por día del año */
+  const inicio = new Date(new Date().getFullYear(), 0, 0);
+  const dia = Math.floor((Date.now() - inicio) / 86400000);
+  const idx = dia % TIPS_DIARIOS.length;
+  const tip = TIPS_DIARIOS[idx];
+  document.getElementById('tipDiaContainer').innerHTML = `
+    <div class="tip-card">
+      <div class="tip-number">${String(idx + 1).padStart(2, '0')}</div>
+      <div>
+        <div class="tip-tag">${tip.tag}</div>
+        <div class="tip-text">${tip.texto}</div>
+        <div class="tip-detail">${tip.detalle}</div>
+      </div>
+    </div>`;
+
+  /* Para ti — insights personalizados */
+  generarInsights();
+
+  /* Te falta probar */
+  generarFalta();
+
+  /* Variedades */
+  document.getElementById('variedadGrid').innerHTML = VARIEDADES.map(v => `
+    <div class="variedad-card">
+      <div class="variedad-head">
+        <div class="variedad-name">${v.nombre}</div>
+        <div class="variedad-origin">${v.origen}</div>
+      </div>
+      <div class="variedad-body">
+        <div class="variedad-desc">${v.desc}</div>
+        <div class="variedad-sabores">${v.sabores.map(s=>`<span class="sab-tag">${s}</span>`).join('')}</div>
+        <div class="variedad-meta">
+          <div><div class="vmeta-lbl">Métodos</div><div class="vmeta-val">${v.metodos}</div></div>
+          <div><div class="vmeta-lbl">Proceso</div><div class="vmeta-val">${v.proceso}</div></div>
+          <div><div class="vmeta-lbl">Altitud</div><div class="vmeta-val">${v.altitud}</div></div>
+          <div><div class="vmeta-lbl">Nota</div><div class="vmeta-val">${v.nota}</div></div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  /* Para espresso */
+  document.getElementById('espressoCard').innerHTML = `
+    <p style="font-size:var(--tx-base);color:var(--t2);line-height:1.65;max-width:68ch;margin-bottom:0">
+      El espresso magnifica tanto las virtudes como los defectos del café. Estas seis cosas marcan la diferencia entre una taza brillante y una mediocre.
+    </p>
+    <div class="espresso-grid">
+      ${[
+        ['01','Fecha de tostado reciente','Busca 10–21 días desde el tostado. Más fresco = demasiado CO₂ (dificulta la extracción). Más viejo = se oxida. Muchos tostadores ponen "best before" en vez de "roasted on" — busca la fecha exacta de tostado.'],
+        ['02','Proceso que conozcas','Para empezar: lavado (limpio, fácil de calibrar) o honey/natural seco (más cuerpo y dulzura). Los anaeróbicos intensos son difíciles de extraer en espresso — reserva para cuando tengas la técnica afinada.'],
+        ['03','Altitud media-alta (1400+ msnm)','Los granos de altura son más densos y extraen de manera más uniforme. A baja altitud los granos son más porosos y fáciles de sobreextraer. Con 9 bars de presión, la densidad del grano es especialmente importante.'],
+        ['04','Tostador transparente','Si el empaque no dice el origen, la variedad o la fecha de tostado — desconfía. Los buenos tostadores quieren que sepas todo. "Mezcla especial para espresso" sin datos es señal de alerta.'],
+        ['05','Tueste claro-medio para origen','Los tuestes oscuros carbonizan los azúcares y opacan el origen — todos saben a "espresso genérico". Un tueste claro-medio es más difícil de extraer pero el resultado puede ser extraordinario.'],
+        ['06','Variedades con estructura','Tabi, Caturra, Bourbon funcionan bien en espresso. Las Geisha lavadas tienen acidez muy delgada para los 9 bars. Empieza con variedades más estructuradas; experimenta con las florales cuando domines la técnica.']
+      ].map(([n,t,b])=>`
+        <div class="esp-item">
+          <div class="esp-num">${n}</div>
+          <div class="esp-title">${t}</div>
+          <div class="esp-body">${b}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function generarInsights() {
+  const grid = document.getElementById('insightGrid');
+  if (!cafes.length) {
+    grid.innerHTML = `<div class="insight-card"><div class="insight-icon">☕</div><div class="insight-title">Agrega tu primer café</div><div class="insight-body">Los insights personalizados aparecerán aquí cuando tengas cafés en tu inventario.</div></div>`;
+    return;
+  }
+  const insights = [];
+  const contProc = {};
+  cafes.forEach(c => { if (c.proceso) contProc[c.proceso] = (contProc[c.proceso]||0)+1; });
+  const paises = [...new Set(cafes.filter(c=>c.pais).map(c=>c.pais))];
+  const topProc = Object.entries(contProc).sort((a,b)=>b[1]-a[1])[0];
+
+  if (paises.length >= 2)
+    insights.push({ icon:'🌍', title:`${paises.length} países explorados`, body:`Has probado café de: ${paises.slice(0,4).join(', ')}${paises.length>4?` y ${paises.length-4} más`:''}.`, cta:'' });
+
+  if (topProc)
+    insights.push({ icon:'🔄', title:`Tu proceso favorito es ${topProc[0]}`, body:`${topProc[1]} de tus cafés son ${topProc[0]}. ${topProc[0]==='Lavado'?'El lavado muestra el terroir con más claridad.':topProc[0]==='Natural'?'Los naturales tienen cuerpo y dulzura de fruta que enamoran.':topProc[0]==='Anaeróbico'?'Claramente te gustan los perfiles intensos y expresivos.':'Un proceso con mucha personalidad.'}`, cta:'' });
+
+  const mejores = cafes.filter(c=>c.resultado>=4).sort((a,b)=>b.resultado-a.resultado);
+  if (mejores.length)
+    insights.push({ icon:'⭐', title:`${mejores.length} cafés con 4+ estrellas`, body:`Tu mejor calificado: ${mejores[0].nombre}${mejores[0].tostador?' de '+mejores[0].tostador:''}.${mejores[0].recompra?' Marcaste que lo volverías a comprar — ¿ya lo hiciste?':''}`, cta:'' });
+
+  const todosProc = ['Lavado','Natural','Honey','Anaeróbico','Natural fermentado','Despulpado natural'];
+  const noExplorados = todosProc.filter(p=>!contProc[p]);
+  if (noExplorados.length)
+    insights.push({ icon:'🧭', title:'Procesos sin explorar', body:`Aún no tienes ${noExplorados.slice(0,3).join(', ')} en tu colección. ${noExplorados.includes('Honey')?'El honey es el punto medio perfecto entre lavado y natural.':noExplorados.includes('Anaeróbico')?'Un anaeróbico bien hecho puede cambiar lo que crees que es el café.':'Cada proceso es un perfil completamente distinto.'}`, cta:'Expande tu paladar →' });
+
+  const porProbar = cafes.filter(c=>c.estado==='Por probar');
+  if (porProbar.length >= 2)
+    insights.push({ icon:'⏳', title:`${porProbar.length} cafés esperando`, body:`Tienes ${porProbar.length} cafés marcados "por probar".${porProbar[0]?' El próximo en la lista: '+porProbar[0].nombre+'.':''}`, cta:'' });
+
+  const altitudes = cafes.filter(c=>c.altitud&&!isNaN(parseInt(c.altitud))).map(c=>parseInt(c.altitud));
+  if (altitudes.length >= 3) {
+    const prom = Math.round(altitudes.reduce((s,v)=>s+v,0)/altitudes.length);
+    insights.push({ icon:'⛰', title:`${prom} msnm de altura promedio`, body:`${prom>=1700?'Claramente atraída por los cafés de altura — donde los granos son más densos y complejos.':prom>=1400?'Una altitud respetable. Sobre 1700 msnm el perfil cambia notablemente.':'Hay mucho por explorar en las alturas.'}`, cta:'' });
+  }
+
+  const recompra = cafes.filter(c=>c.recompra);
+  if (recompra.length)
+    insights.push({ icon:'♻', title:`${recompra.length} cafés para volver a comprar`, body:`${recompra[0]?'"'+recompra[0].nombre+'" encabeza la lista.':'Tienes cafés favoritos identificados.'}`, cta:'' });
+
+  const variedsRaw = cafes.filter(c=>c.variedad).map(c=>c.variedad.toLowerCase());
+  if (!variedsRaw.some(v=>v.includes('geisha')||v.includes('gesha')))
+    insights.push({ icon:'🌸', title:'Aún sin Geisha en tu colección', body:'La variedad más codiciada de la especialidad — jazmín, bergamota, té blanco. Una experiencia que vale la pena al menos una vez.', cta:'Una experiencia que vale la pena →' });
+
+  if (!insights.length)
+    insights.push({ icon:'☕', title:'Tu colección es única', body:'Sigue explorando y los insights irán creciendo con tu colección.', cta:'' });
+
+  grid.innerHTML = insights.map(i=>`
+    <div class="insight-card">
+      <div class="insight-icon">${i.icon}</div>
+      <div class="insight-title">${i.title}</div>
+      <div class="insight-body">${i.body}</div>
+      ${i.cta?`<div class="insight-cta">${i.cta}</div>`:''}
+    </div>`).join('');
+}
+
+function generarFalta() {
+  const sugerencias = [];
+  const procesosEnColeccion = [...new Set(cafes.map(c=>c.proceso).filter(Boolean))];
+  const paisesLC = cafes.map(c=>(c.pais||'').toLowerCase());
+  const variedsLC = cafes.filter(c=>c.variedad).map(c=>c.variedad.toLowerCase());
+
+  if (!procesosEnColeccion.includes('Anaeróbico') && !procesosEnColeccion.includes('Natural fermentado'))
+    sugerencias.push({ titulo:'Un café anaeróbico', desc:'Fermentación sin oxígeno que crea perfiles únicos: ciruela macerada, vino tinto, cacao profundo. Es el perfil más diferente que puedes encontrar.' });
+  if (!procesosEnColeccion.some(p=>p==='Natural'||p==='Natural fermentado'))
+    sugerencias.push({ titulo:'Un Natural etíope', desc:'Los naturales de Sidamo o Guji tienen fruta tropical intensa y dulzura que los lavados no tienen. Son la puerta de entrada al proceso natural.' });
+  if (!procesosEnColeccion.includes('Honey'))
+    sugerencias.push({ titulo:'Un Honey costarricense', desc:'Costa Rica formalizó el honey process. Un honey rojo o negro de Tarrazu: el punto medio perfecto entre la limpieza del lavado y la fruta del natural.' });
+  if (!paisesLC.some(p=>p.includes('kenia')||p.includes('kenya')))
+    sugerencias.push({ titulo:'Café de Kenia (SL28/SL34)', desc:'Acidez brillante, grosella negra, tomate maduro. Los kenianos son los más polarizantes del mundo — o los amas o no, pero tienes que probarlos.' });
+  if (!paisesLC.some(p=>p.includes('etiopía')||p.includes('etiopia')||p.includes('ethiopia')))
+    sugerencias.push({ titulo:'Un lavado de Yirgacheffe', desc:'El origen del café. Los lavados de Yirgacheffe tienen notas de bergamota, limón y flor de azahar que no encontrarás en ningún otro origen.' });
+  if (!variedsLC.some(v=>v.includes('geisha')||v.includes('gesha')))
+    sugerencias.push({ titulo:'Variedad Geisha', desc:'Jazmín, bergamota, té blanco. Una Geisha bien cultivada y bien extraída muestra por qué existe el mundo de la especialidad.' });
+  if (!variedsLC.some(v=>v.includes('sl28')||v.includes('sl34')||v.includes('bourbon')))
+    sugerencias.push({ titulo:'Un Bourbon clásico', desc:'Una de las dos variedades madre del arábica moderno. Dulzura, fruta roja, complejidad. La base genética de casi todo lo que comes.' });
+
+  if (!sugerencias.length)
+    sugerencias.push({ titulo:'¡Colección muy completa!', desc:'Tienes una gran variedad de procesos y orígenes. Ahora profundiza: busca micro-lotes de los tostadores que más te gustan.' });
+
+  document.getElementById('faltaGrid').innerHTML = sugerencias.slice(0, 6).map(s=>`
+    <div class="falta-card">
+      <div class="falta-titulo">${s.titulo}</div>
+      <div class="falta-desc">${s.desc}</div>
+    </div>`).join('');
 }
 
 /* ═══════════════════════════════════════════════════════════
