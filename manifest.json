@@ -1,0 +1,22 @@
+{
+  "name": "Diario de Café · Charlie en Ruta",
+  "short_name": "Diario de Café",
+  "description": "Inventario, recetas, preparaciones y bitácora de café de especialidad.",
+  "lang": "es-CL",
+  "start_url": "./index.html#/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf5ee",
+  "theme_color": "#f6efe6",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Preparar café", "url": "./index.html#/preparar" },
+    { "name": "Mis cafés", "url": "./index.html#/cafes" },
+    { "name": "Bitácora", "url": "./index.html#/bitacora" }
+  ]
+}
