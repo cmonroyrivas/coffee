@@ -1050,8 +1050,7 @@ const APP = (() => {
 
       <div class="campo"><label for="mvTipo">Qué pasó</label>
         <select id="mvTipo">
-          <option value="compra">Compré más (entra)</option>
-          <option value="devolucion">Devolución (entra)</option>
+          <option value="devolucion">Me devolvieron café (entra)</option>
           <option value="apertura">Abrí la bolsa</option>
           <option value="merma">Se echó a perder (sale)</option>
           <option value="regalo">La regalé (sale)</option>
@@ -1079,6 +1078,11 @@ const APP = (() => {
         <button type="submit" class="btn btn-pri" style="flex:1">Registrar</button>
         <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
       </div>
+      <div class="nota nota-info">¿Compraste más de este café? Eso es una <b>bolsa nueva</b>, no un movimiento:
+        tiene su propia fecha de tueste y su propio precio. Si se mezclaran en una sola bolsa, los días
+        desde el tueste y el costo por taza dejarían de servir.
+        <div style="margin-top:10px"><button type="button" class="btn" id="mvNuevaBolsa">Agregar otra bolsa</button></div>
+      </div>
       <p style="font-size:var(--tx-xs);color:var(--t3);margin-top:12px">
         Todo movimiento queda en el historial y no se borra. Los gramos disponibles se recalculan solos.</p>
     </form>`;
@@ -1099,6 +1103,11 @@ const APP = (() => {
     $('#mvTipo').onchange = sincronizarForm;
     $('#mvLote').onchange = sincronizarForm;
     sincronizarForm();
+
+    $('#mvNuevaBolsa').onclick = () => {
+      const l = DB.lote($('#mvLote').value);
+      if (l) formLote(l.coffee_id);
+    };
 
     $('#fmMov').onsubmit = async e => {
       e.preventDefault();

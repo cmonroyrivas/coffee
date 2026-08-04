@@ -138,10 +138,12 @@ const DB = (() => {
   /* Distingue "la base rechazo esto y siempre lo va a rechazar" de "fallo la red".
      Lo primero hay que avisarlo; lo segundo se reintenta.
 
-     B-18: faltaba P0001, que es el codigo de RAISE EXCEPTION en un trigger. Es
-     justo el de los mensajes propios del inventario ("No alcanza: el lote tiene
-     X g..."), asi que un ajuste imposible se encolaba y se reintentaba para
-     siempre, dejando el aviso pegado en "Subiendo N cambios pendientes...". */
+     B-18: sincronizar() no hacia esta distincion. Reintentaba TODO para siempre,
+     asi que un movimiento imposible encolado sin conexion (ej. sacar 250 g de una
+     bolsa con 240) dejaba el aviso pegado en "Subiendo N cambios pendientes..."
+     sin avisar nunca. Se agrega P0001 porque un RAISE EXCEPTION de trigger sin
+     errcode explicito llega con ese codigo; los mensajes del inventario que si
+     declaran errcode llegan como 23514. */
   const CODIGOS_VALIDACION = [
     '23514',  // check constraint
     '23505',  // clave duplicada
