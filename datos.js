@@ -198,6 +198,9 @@ const DB = (() => {
       q = sb.from(op.tabla).update(op.datos).eq(clave, op.id).select();
     } else if (op.accion === 'delete_suave') {
       q = sb.from(op.tabla).update({ deleted_at: ahora() }).eq(clave, op.id).select();
+    } else if (op.accion === 'delete') {
+      // Borrado duro: solo para tablas de union sin id propio (ej. review_descriptors).
+      q = sb.from(op.tabla).delete().match(op.match);
     } else if (op.accion === 'rpc') {
       q = sb.rpc(op.fn, op.datos || {});
     } else {
@@ -276,7 +279,7 @@ const DB = (() => {
   const estado = {
     cafes: [], lotes: [], movimientos: [], recetas: [], versiones: [], pasos: [],
     preparaciones: [], catas: [], molinillos: [], metodos: [], procesos: [],
-    tostadores: [], descriptores: [], catDescriptores: [], perfil: null,
+    tostadores: [], descriptores: [], catDescriptores: [], descriptoresCata: [], perfil: null,
     cargado: false, desdeCache: false
   };
 
@@ -290,7 +293,8 @@ const DB = (() => {
           preparaciones: estado.preparaciones, catas: estado.catas,
           molinillos: estado.molinillos, metodos: estado.metodos, procesos: estado.procesos,
           tostadores: estado.tostadores, descriptores: estado.descriptores,
-          catDescriptores: estado.catDescriptores, perfil: estado.perfil
+          catDescriptores: estado.catDescriptores, descriptoresCata: estado.descriptoresCata,
+          perfil: estado.perfil
         }
       }));
     } catch (e) { registrarError('cache/guardar', e); }
@@ -329,7 +333,8 @@ const DB = (() => {
       ['procesos', 'coffee_processes', '*', 'orden'],
       ['tostadores', 'roasters', '*', 'nombre'],
       ['catDescriptores', 'flavor_categories', '*', 'orden'],
-      ['descriptores', 'flavor_descriptors', '*', 'nombre']
+      ['descriptores', 'flavor_descriptors', '*', 'nombre'],
+      ['descriptoresCata', 'review_descriptors', '*', null]
     ];
 
     try {
@@ -395,6 +400,43 @@ const DB = (() => {
   }
   function pasosDe(versionId) {
     return estado.pasos.filter(p => p.version_id === versionId).sort((a, b) => a.orden - b.orden);
+  }
+
+  /* ---------- rueda de sabores (art. F-04 fase 2) ---------- */
+  function descriptor(id) { return porId(estado.descriptores, id); }
+  function categoriaSabor(id) {
+    return porId(estado.catDescriptores, id) || { id, nombre: id, tipo: 'positivo' };
+  }
+  function descriptoresDeCata(reviewId) {
+    return estado.descriptoresCata.filter(d => d.review_id === reviewId);
+  }
+  /* Junta, para un cafe, todos los descriptores que eligio en cualquiera de sus catas.
+     Cuenta cuantas veces salio y promedia la intensidad: es lo que se compara
+     contra las notas declaradas por el tostador. */
+  function descriptoresDeCafe(cafeId) {
+    const prepIds = new Set(estado.preparaciones.filter(p => p.coffee_id === cafeId).map(p => p.id));
+    const catasCafe = estado.catas.filter(c => prepIds.has(c.brew_session_id));
+    const conteo = new Map();
+    catasCafe.forEach(c => {
+      descriptoresDeCata(c.id).forEach(rd => {
+        const prev = conteo.get(rd.descriptor_id) || { n: 0, suma: 0, esDefecto: false };
+        prev.n++;
+        prev.suma += num(rd.intensidad, 3);
+        prev.esDefecto = prev.esDefecto || !!rd.es_defecto;
+        conteo.set(rd.descriptor_id, prev);
+      });
+    });
+    return [...conteo.entries()]
+      .map(([descriptor_id, v]) => {
+        const d = descriptor(descriptor_id);
+        if (!d) return null;
+        return {
+          descriptor: d, categoria: categoriaSabor(d.categoria_id),
+          n: v.n, intensidadProm: Math.round((v.suma / v.n) * 10) / 10, esDefecto: v.esDefecto
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.n - a.n);
   }
 
   const ESTADOS_ACTIVOS = ['sin_abrir', 'abierto', 'bajo_stock'];
@@ -557,6 +599,9 @@ const DB = (() => {
   async function nuevaReceta(datos) {
     return escribir({ accion: 'insert', tabla: 'recipes', datos: { ...datos, user_id: usuario.id } });
   }
+  async function editarReceta(id, datos) {
+    return escribir({ accion: 'update', tabla: 'recipes', id, datos });
+  }
   async function nuevaVersion(datos) {
     return escribir({ accion: 'insert', tabla: 'recipe_versions', datos: { ...datos, user_id: usuario.id } });
   }
@@ -582,6 +627,22 @@ const DB = (() => {
   }
   async function editarCata(id, datos) {
     return escribir({ accion: 'update', tabla: 'tasting_reviews', id, datos });
+  }
+
+  /* Reemplaza por completo los descriptores de una cata: se borran los que
+     tenia y se insertan los nuevos. review_descriptors no tiene id propio
+     ni deleted_at, asi que no hay edicion fila por fila, solo reemplazo. */
+  async function guardarDescriptoresCata(reviewId, seleccion) {
+    const r = await escribir({ accion: 'delete', tabla: 'review_descriptors', match: { review_id: reviewId } });
+    estado.descriptoresCata = estado.descriptoresCata.filter(d => d.review_id !== reviewId);
+    if (!seleccion.length) return r;
+    const filas = seleccion.map(s => ({
+      review_id: reviewId, descriptor_id: s.descriptor_id,
+      intensidad: s.intensidad, es_defecto: !!s.es_defecto
+    }));
+    const ri = await escribir({ accion: 'insert', tabla: 'review_descriptors', datos: filas });
+    estado.descriptoresCata.push(...(ri.datos || filas));
+    return ri;
   }
 
   async function guardarPerfil(datos) {
@@ -699,11 +760,12 @@ const DB = (() => {
     diasDesdeTueste, diasDesdeApertura, diasEstimados,
     totalGramosDisponibles, tazasDisponiblesTotales, consumoUltimos,
     valoracionPromedio, metodoMasUsado, mejorCafe, ultimaPreparacion, recetaFavorita,
+    descriptor, categoriaSabor, descriptoresDeCata, descriptoresDeCafe,
     // escritura
     nuevoCafe, editarCafe, borrarCafe, nuevoLote, editarLote, nuevoMovimiento,
-    nuevaReceta, nuevaVersion, nuevosPasos,
+    nuevaReceta, editarReceta, nuevaVersion, nuevosPasos,
     nuevaPreparacion, editarPreparacion, borrarPreparacion,
-    nuevaCata, editarCata, guardarPerfil, asegurarTostador,
+    nuevaCata, editarCata, guardarDescriptoresCata, guardarPerfil, asegurarTostador,
     // exportacion
     exportarInventarioCSV, exportarPreparacionesCSV, exportarTodoJSON, descargar
   };

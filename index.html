@@ -250,6 +250,10 @@ details.avanzado summary{font-size:var(--tx-sm); font-weight:600; color:var(--t2
 .paso-t{font-size:var(--tx-xs); text-transform:uppercase; letter-spacing:.08em; color:var(--t3); font-weight:600}
 .paso-tiempo{font-size:var(--tx-xs); color:var(--t3); margin-top:var(--sp1); font-variant-numeric:tabular-nums}
 
+/* ---------- rueda de sabores ---------- */
+.sabor-fila{display:flex; align-items:center; gap:var(--sp2); flex-wrap:wrap; margin-bottom:var(--sp2)}
+.escala-mini button{width:32px; height:32px; font-size:var(--tx-xs)}
+
 /* ---------- estrellas / escala ---------- */
 .escala{display:flex; gap:var(--sp1); flex-wrap:wrap}
 .escala button{width:44px; height:44px; border:1px solid var(--border); background:var(--s0);
@@ -322,8 +326,10 @@ details.avanzado summary{font-size:var(--tx-sm); font-weight:600; color:var(--t2
   transform:translate(-50%,140%); background:var(--t1); color:var(--s0);
   padding:var(--sp3) var(--sp5); border-radius:99px; font-size:var(--tx-sm); font-weight:500;
   z-index:200; transition:transform .28s cubic-bezier(.2,.8,.3,1); max-width:90vw; text-align:center;
-  box-shadow:var(--sh3)}
-#toast.show{transform:translate(-50%,0)}
+  box-shadow:var(--sh3); visibility:hidden}
+/* Sin visibility el toast vacio mide 24px y el 140% no alcanza a sacarlo de la pantalla:
+   quedaba una mancha oscura fija sobre la barra inferior en todas las vistas. */
+#toast.show{transform:translate(-50%,0); visibility:visible}
 #toast.error{background:var(--bad)}
 
 /* ---------- login ---------- */

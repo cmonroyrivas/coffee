@@ -611,6 +611,7 @@ const APP = (() => {
         <button class="subtab" role="tab" aria-selected="true" data-st="perfil">Origen</button>
         <button class="subtab" role="tab" aria-selected="false" data-st="bolsas">Bolsas (${lotes.length})</button>
         <button class="subtab" role="tab" aria-selected="false" data-st="historial">Historial (${preps.length})</button>
+        <button class="subtab" role="tab" aria-selected="false" data-st="sabores">Sabores</button>
       </div>
 
       <div data-panel="perfil">
@@ -705,10 +706,51 @@ const APP = (() => {
         ${preps.length ? preps.map(p => filaPreparacion(p)).join('') : `
           <div class="vacio"><div class="vacio-ico" aria-hidden="true">▽</div>
           <h3>Sin preparaciones</h3><p>Cuando prepares este café y lo registres, acá vas a poder comparar qué funcionó.</p></div>`}
-      </div>`;
+      </div>
+
+      <div data-panel="sabores" style="display:none">${tarjetaSabores(c.id)}</div>`;
 
     abrirModal(c.nombre, html);
     engancharSubtabs();
+  }
+
+  /* ============================================================
+     RUEDA DE SABORES · comparación tostador vs. lo que catastraste (F-04 fase 2)
+     ============================================================ */
+  function tarjetaSabores(cafeId) {
+    const c = DB.cafe(cafeId);
+    const tuyos0 = DB.descriptoresDeCafe(cafeId);
+    const tuyos = MOTOR.compararSabores(c.notas_tostador, tuyos0);
+    const porCategoria = {};
+    tuyos.forEach(d => { (porCategoria[d.categoria.id] = porCategoria[d.categoria.id] || []).push(d); });
+    const categorias = [...DB.estado.catDescriptores]
+      .filter(cat => (porCategoria[cat.id] || []).length)
+      .sort((a, b) => DB.num(a.orden, 100) - DB.num(b.orden, 100));
+
+    return `
+      <div class="seccion">
+        <div class="seccion-tit">Notas declaradas por el tostador</div>
+        ${c.notas_tostador
+          ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:0">${esc(c.notas_tostador)}</p>`
+          : '<p class="pista">Esta bolsa no tiene notas del tostador registradas.</p>'}
+      </div>
+
+      <div class="seccion" style="margin-top:20px">
+        <div class="seccion-tit">Lo que tú reconociste (${tuyos.length})</div>
+        ${!tuyos.length ? `<div class="nota">Todavía no has anotado sabores de este café.
+            Cuando evalúes una preparación y abras "Detallar…", los sabores que marques van a aparecer acá,
+            comparados con lo que declara el tostador.</div>`
+          : categorias.map(cat => `
+            <details class="avanzado" open style="margin-bottom:8px">
+              <summary>${esc(cat.nombre)} (${porCategoria[cat.id].length})</summary>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                ${porCategoria[cat.id].sort((a, b) => b.n - a.n).map(d => `
+                  <span class="chip ${d.esDefecto ? 'bad' : ''}">${esc(d.descriptor.nombre)}
+                    <small style="opacity:.7">×${d.n} · int. ${d.intensidadProm}</small>${d.coincideTostador ? ' · ✓ tostador' : ''}
+                  </span>`).join('')}
+              </div>
+            </details>`).join('')}
+      </div>`;
   }
 
   function engancharSubtabs() {
@@ -1119,9 +1161,10 @@ const APP = (() => {
             ${v.temperatura_c ? `<span>${v.temperatura_c} °C</span>` : ''}
             ${v.molienda_ajuste !== null ? `<span>mol. ${v.molienda_ajuste}</span>` : ''}
           </div>` : ''}
-          ${v && c ? `<div class="btn-fila" style="margin-top:12px">
-            <button class="btn btn-pri" onclick="APP.prepararCon('${c.id}','','${r.method_id}',${v.dosis_g},${v.agua_g},${v.temperatura_c || 'null'},${v.molienda_ajuste ?? 'null'},${v.tiempo_total_seg || 'null'},'${r.id}','${v.id}')">Preparar</button>
-          </div>` : ''}
+          <div class="btn-fila" style="margin-top:12px">
+            ${v && c ? `<button class="btn btn-pri" onclick="APP.prepararCon('${c.id}','','${r.method_id}',${v.dosis_g},${v.agua_g},${v.temperatura_c || 'null'},${v.molienda_ajuste ?? 'null'},${v.tiempo_total_seg || 'null'},'${r.id}','${v.id}')">Preparar</button>` : ''}
+            ${v ? `<button class="btn btn-fant" onclick="APP.formDuplicarReceta('${r.id}')">Duplicar y ajustar</button>` : ''}
+          </div>
         </div>`;
       }).join('') : `<div class="nota">Todavía no tienes recetas guardadas. Cuando prepares algo que te guste, guárdalo como receta y podrás versionarlo.</div>`}
     </div>`;
@@ -1156,6 +1199,81 @@ const APP = (() => {
       return iniciarPreparacion(cafeId, loteId || (r.lote ? r.lote.id : ''), r.metodo.id, r.dosis_g, r.agua_g, r.temperatura_c, r.molienda, r.tiempo_total_seg);
     }
     iniciarPreparacion(cafeId, loteId, methodId, dosis, agua, temp, molienda, tiempo, recetaId, versionId);
+  }
+
+  /* ============================================================
+     DUPLICAR Y AJUSTAR RECETA (F-03 fase 2)
+     Crea la version siguiente sin tocar la anterior: el esquema
+     versiona por diseño, esto solo agrega el boton.
+     ============================================================ */
+  function formDuplicarReceta(recetaId) {
+    const r = DB.porId(DB.estado.recetas, recetaId);
+    const v = DB.versionActual(recetaId);
+    if (!r || !v) return;
+    const siguiente = Math.max(...DB.versionesDe(recetaId).map(x => x.version), r.version_actual || 1) + 1;
+
+    abrirModal('Duplicar y ajustar', `
+      <p style="font-size:var(--tx-sm);color:var(--t2);margin:0 0 20px">
+        ${esc(r.nombre)} · versión actual: ${v.version}. Se guarda como versión ${siguiente};
+        la ${v.version} queda intacta en el historial.</p>
+      <form id="fmDupReceta" novalidate>
+        <div class="grid2">
+          <div class="campo"><label for="drDosis">Dosis (g)</label>
+            <input id="drDosis" type="number" inputmode="decimal" step="0.1" value="${v.dosis_g}">
+            <div class="msg-error">La dosis tiene que ser mayor que cero.</div></div>
+          <div class="campo"><label for="drAgua">Agua (g)</label>
+            <input id="drAgua" type="number" inputmode="decimal" step="1" value="${v.agua_g}">
+            <div class="msg-error">El agua tiene que ser mayor que cero.</div></div>
+        </div>
+        <div class="grid2">
+          <div class="campo"><label for="drTemp">Temperatura (°C)</label>
+            <input id="drTemp" type="number" inputmode="decimal" step="1" value="${v.temperatura_c ?? ''}"></div>
+          <div class="campo"><label for="drMolienda">Molienda</label>
+            <input id="drMolienda" type="number" inputmode="decimal" step="0.1" value="${v.molienda_ajuste ?? ''}"></div>
+        </div>
+        <div class="campo"><label for="drTiempo">Tiempo total (m:ss)</label>
+          <input id="drTiempo" value="${v.tiempo_total_seg ? DB.segundosATexto(v.tiempo_total_seg) : ''}" placeholder="3:30"></div>
+        <div class="campo"><label for="drNotas">Qué estás cambiando y por qué</label>
+          <textarea id="drNotas" placeholder="Ej: molienda más fina porque la última vez salió aguada"></textarea>
+          <div class="msg-error">Contá en unas palabras qué estás cambiando (mínimo 3 letras).</div>
+          <div class="pista">Queda anotado en el historial de versiones de esta receta.</div></div>
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">Guardar como versión ${siguiente}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    $('#fmDupReceta').onsubmit = async e => {
+      e.preventDefault();
+      const dosis = DB.num($('#drDosis').value);
+      const agua = DB.num($('#drAgua').value);
+      const notas = $('#drNotas').value.trim();
+
+      const okDosis = dosis > 0, okAgua = agua > 0, okNotas = notas.length >= 3;
+      $('#drDosis').closest('.campo').classList.toggle('error', !okDosis);
+      $('#drAgua').closest('.campo').classList.toggle('error', !okAgua);
+      $('#drNotas').closest('.campo').classList.toggle('error', !okNotas);
+      if (!okDosis || !okAgua || !okNotas) { (!okDosis ? $('#drDosis') : !okAgua ? $('#drAgua') : $('#drNotas')).focus(); return; }
+
+      try {
+        const rr = await DB.nuevaVersion({
+          recipe_id: recetaId, version: siguiente, deriva_de: v.id,
+          grinder_id: v.grinder_id || null,
+          dosis_g: dosis, agua_g: agua,
+          temperatura_c: DB.num($('#drTemp').value),
+          molienda_ajuste: DB.num($('#drMolienda').value),
+          tiempo_total_seg: DB.textoASegundos($('#drTiempo').value),
+          bloom: v.bloom, bloom_agua_g: v.bloom_agua_g, bloom_seg: v.bloom_seg,
+          agitacion: v.agitacion, velocidad_vertido: v.velocidad_vertido,
+          tipo_filtro: v.tipo_filtro, tipo_agua: v.tipo_agua,
+          notas_cambio: notas
+        });
+        await DB.editarReceta(recetaId, { version_actual: siguiente });
+        toast(rr.encolado ? 'Guardado aquí. Se sube cuando vuelva la conexión.' : `Versión ${siguiente} guardada.`);
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
   }
 
   /* ============================================================
@@ -1360,17 +1478,86 @@ const APP = (() => {
   /* ============================================================
      EVALUACIÓN + ASISTENTE DE AJUSTE (art. 14 y 16)
      ============================================================ */
-  const evalTmp = { pts: null, meGusto: null, atributos: {}, diag: {}, recompra: null };
+  const evalTmp = { pts: null, meGusto: null, atributos: {}, diag: {}, recompra: null, descriptores: {} };
+
+  /* Pinta la rueda de sabores agrupada por familia. seleccionInicial trae los
+     descriptores ya elegidos (edicion de una cata existente). */
+  function pintarSelectorSabores(seleccionInicial) {
+    const porCat = {};
+    DB.estado.descriptores.forEach(d => { (porCat[d.categoria_id] = porCat[d.categoria_id] || []).push(d); });
+    const cats = [...DB.estado.catDescriptores].sort((a, b) => DB.num(a.orden, 100) - DB.num(b.orden, 100));
+    if (!cats.some(c => (porCat[c.id] || []).length)) {
+      return '<p class="pista">Todavía no hay descriptores de sabor cargados.</p>';
+    }
+    const yaSel = new Map(seleccionInicial.map(s => [s.descriptor_id, s]));
+    return cats.filter(c => (porCat[c.id] || []).length).map(c => `
+      <details class="avanzado">
+        <summary>${esc(c.nombre)}${c.tipo === 'defecto' ? ' (defectos)' : ''}</summary>
+        <div class="opciones" style="margin-top:10px">
+          ${porCat[c.id].map(d => {
+            const s = yaSel.get(d.id);
+            const intensidad = s ? DB.num(s.intensidad, 3) : 3;
+            return `
+            <div class="sabor-fila" data-desc="${esc(d.id)}">
+              <button type="button" class="opcion" data-defecto="${c.tipo === 'defecto'}" aria-pressed="${s ? 'true' : 'false'}">${esc(d.nombre)}</button>
+              <div class="escala escala-mini" role="group" aria-label="Intensidad de ${esc(d.nombre)}" style="display:${s ? '' : 'none'}">
+                ${[1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" aria-pressed="${intensidad === i}">${i}</button>`).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </details>`).join('');
+  }
+
+  function engancharSelectorSabores() {
+    $$('.sabor-fila').forEach(fila => {
+      const descId = fila.dataset.desc;
+      const btn = fila.querySelector('.opcion');
+      const escMini = fila.querySelector('.escala-mini');
+      btn.onclick = () => {
+        const activo = btn.getAttribute('aria-pressed') === 'true';
+        if (activo) {
+          btn.setAttribute('aria-pressed', 'false');
+          escMini.style.display = 'none';
+          delete evalTmp.descriptores[descId];
+        } else {
+          btn.setAttribute('aria-pressed', 'true');
+          escMini.style.display = '';
+          evalTmp.descriptores[descId] = { descriptor_id: descId, intensidad: 3, es_defecto: btn.dataset.defecto === 'true' };
+        }
+      };
+      escMini.querySelectorAll('button').forEach(b => b.onclick = () => {
+        escMini.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        if (evalTmp.descriptores[descId]) evalTmp.descriptores[descId].intensidad = DB.num(b.dataset.v);
+      });
+    });
+  }
 
   function formEvaluacion(prepId) {
     const p = DB.porId(DB.estado.preparaciones, prepId);
     if (!p) return;
     const c = DB.cafe(p.coffee_id);
     const ya = DB.cataDe(prepId);
-    Object.assign(evalTmp, { pts: ya ? DB.num(ya.puntuacion_personal) : null, meGusto: ya ? ya.meGusto : null, atributos: {}, diag: {}, recompra: null, prepId });
+    const sabsYa = ya ? DB.descriptoresDeCata(ya.id) : [];
+    evalTmp.descriptores = {};
+    sabsYa.forEach(s => { evalTmp.descriptores[s.descriptor_id] = { descriptor_id: s.descriptor_id, intensidad: DB.num(s.intensidad, 3), es_defecto: !!s.es_defecto }; });
 
-    const atributos = [['dulzor', 'Dulzor'], ['acidez', 'Acidez'], ['cuerpo', 'Cuerpo'],
-                       ['intensidad', 'Intensidad'], ['balance', 'Balance'], ['retrogusto', 'Retrogusto']];
+    const atributos = [['aroma', 'Aroma'], ['dulzor', 'Dulzor'], ['acidez', 'Acidez'], ['cuerpo', 'Cuerpo'],
+                       ['sabor', 'Sabor'], ['balance', 'Balance'], ['retrogusto', 'Retrogusto'],
+                       ['claridad', 'Claridad'], ['complejidad', 'Complejidad'], ['uniformidad', 'Uniformidad'],
+                       ['intensidad', 'Intensidad']];
+
+    /* La columna es me_gusto, no meGusto: leerla mal dejaba la respuesta sin marcar
+       al reabrir una evaluacion ya guardada. */
+    evalTmp.atributos = {};
+    if (ya) atributos.forEach(([k]) => { const v = DB.num(ya[k]); if (v !== null) evalTmp.atributos[k] = v; });
+    Object.assign(evalTmp, {
+      pts: ya ? DB.num(ya.puntuacion_personal) : null,
+      meGusto: ya && ya.me_gusto !== null && ya.me_gusto !== undefined ? !!ya.me_gusto : null,
+      recompra: c && c.recompraria !== null && c.recompraria !== undefined ? !!c.recompraria : null,
+      diag: {}, prepId
+    });
+    const pres = (valor, esperado) => `aria-pressed="${valor === esperado ? 'true' : 'false'}"`;
 
     abrirModal('¿Cómo quedó?', `
       <p style="font-size:var(--tx-sm);color:var(--t2);margin:0 0 20px">
@@ -1379,25 +1566,30 @@ const APP = (() => {
       <div class="campo">
         <label id="lbPts">Tu puntuación, de 1 a 10</label>
         <div class="escala" role="group" aria-labelledby="lbPts" id="evPts">
-          ${Array.from({ length: 10 }, (_, i) => `<button type="button" data-v="${i + 1}" aria-pressed="false">${i + 1}</button>`).join('')}
+          ${Array.from({ length: 10 }, (_, i) => `<button type="button" data-v="${i + 1}" ${pres(evalTmp.pts, i + 1)}>${i + 1}</button>`).join('')}
         </div>
         <div class="pista">Es tu puntuación personal, no un puntaje SCA ni una evaluación profesional.</div>
       </div>
 
       <div class="campo"><label id="lbGusto">¿Te gustó?</label>
         <div class="si-no" role="group" aria-labelledby="lbGusto" id="evGusto">
-          <button type="button" data-v="1" aria-pressed="false">Sí</button>
-          <button type="button" data-v="0" aria-pressed="false">No</button>
+          <button type="button" data-v="1" ${pres(evalTmp.meGusto, true)}>Sí</button>
+          <button type="button" data-v="0" ${pres(evalTmp.meGusto, false)}>No</button>
         </div></div>
 
       <details class="avanzado">
-        <summary>Detallar dulzor, acidez, cuerpo…</summary>
+        <summary>Detallar los 11 atributos y los sabores…</summary>
         <div style="margin-top:12px">
           ${atributos.map(([k, l]) => `
             <div class="campo"><label id="lb-${k}">${l} (1 a 5)</label>
               <div class="escala" role="group" aria-labelledby="lb-${k}" data-attr="${k}">
-                ${Array.from({ length: 5 }, (_, i) => `<button type="button" data-v="${i + 1}" aria-pressed="false">${i + 1}</button>`).join('')}
+                ${Array.from({ length: 5 }, (_, i) => `<button type="button" data-v="${i + 1}" ${pres(evalTmp.atributos[k], i + 1)}>${i + 1}</button>`).join('')}
               </div></div>`).join('')}
+        </div>
+        <div class="campo" style="margin-top:4px">
+          <label>¿Qué sabores reconociste?</label>
+          <div class="pista" style="margin-bottom:10px">Marca los que sientas. Al elegir uno vas a poder ajustar la intensidad, de 1 a 5.</div>
+          ${pintarSelectorSabores(sabsYa)}
         </div>
       </details>
 
@@ -1420,8 +1612,8 @@ const APP = (() => {
 
       <div class="campo"><label id="lbRec">¿Comprarías este café de nuevo?</label>
         <div class="si-no" role="group" aria-labelledby="lbRec" id="evRec">
-          <button type="button" data-v="1" aria-pressed="false">Sí</button>
-          <button type="button" data-v="0" aria-pressed="false">No</button>
+          <button type="button" data-v="1" ${pres(evalTmp.recompra, true)}>Sí</button>
+          <button type="button" data-v="0" ${pres(evalTmp.recompra, false)}>No</button>
         </div></div>
 
       <button class="btn btn-pri btn-bloque" id="evGuardar">Guardar evaluación</button>`);
@@ -1440,6 +1632,7 @@ const APP = (() => {
       g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       evalTmp.atributos[g.dataset.attr] = DB.num(b.dataset.v);
     }));
+    engancharSelectorSabores();
     $$('[data-diag]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
       g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       evalTmp.diag[g.dataset.diag] = b.dataset.v === '1';
@@ -1450,15 +1643,17 @@ const APP = (() => {
         toast('Pon al menos una puntuación o si te gustó.', 'error'); return;
       }
       try {
+        const hayDetalle = Object.keys(evalTmp.atributos).length || Object.keys(evalTmp.descriptores).length;
         const datos = {
-          brew_session_id: prepId, modalidad: Object.keys(evalTmp.atributos).length ? 'completa' : 'rapida',
+          brew_session_id: prepId, modalidad: hayDetalle ? 'completa' : 'rapida',
           puntuacion_personal: evalTmp.pts, me_gusto: evalTmp.meGusto,
           compraria_de_nuevo: evalTmp.recompra,
           notas: $('#evNotas').value.trim() || null,
           diagnostico: evalTmp.diag, ...evalTmp.atributos
         };
-        if (ya) await DB.editarCata(ya.id, datos);
-        else await DB.nuevaCata(datos);
+        const r = ya ? await DB.editarCata(ya.id, datos) : await DB.nuevaCata(datos);
+        const idCata = ya ? ya.id : (r.datos && r.datos[0] && r.datos[0].id);
+        if (idCata) await DB.guardarDescriptoresCata(idCata, Object.values(evalTmp.descriptores));
 
         if (evalTmp.recompra !== null && c) {
           await DB.editarCafe(c.id, { recompraria: evalTmp.recompra });
@@ -1966,7 +2161,7 @@ const APP = (() => {
   /* API publica para los onclick del HTML */
   return {
     irA, cerrarModal, formCafe, formLote, formMovimiento, detalleCafe,
-    prepararCon, iniciarPreparacion, formEvaluacion, bitacoraTab,
+    prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta, bitacoraTab,
     borrarCafe, borrarPreparacion: borrarPrep, forzarSync, salir, abrirPerfil, toast
   };
 })();

@@ -573,8 +573,29 @@ const MOTOR = (() => {
     return { hechos, tendencias, hipotesis, nPreparaciones: preps.length, nEvaluadas: conNota.length };
   }
 
+  /* ============================================================
+     RUEDA DE SABORES: comparacion simple con las notas del tostador
+     ------------------------------------------------------------
+     Solo marca coincidencia de texto (nombre o sinonimo del
+     descriptor dentro de las notas). No inventa relaciones que el
+     texto no tenga.
+     ============================================================ */
+  function compararSabores(notasTostador, descriptoresUsuario) {
+    // Se comparan sin acentos, igual que el mapa de origenes: las notas de las
+    // bolsas vienen escritas indistintamente "jazmin" o "jazmín".
+    const sinAcento = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const texto = sinAcento(notasTostador || '');
+    return descriptoresUsuario.map(d => {
+      const nombres = [d.descriptor.nombre, ...(d.descriptor.sinonimos || [])]
+        .filter(Boolean).map(sinAcento);
+      const coincideTostador = !!texto && nombres.some(n => texto.includes(n));
+      return { ...d, coincideTostador };
+    });
+  }
+
   return {
     recomendar, generarPasos, sugerirAjuste, brechasInventario, perfilPreferencias,
+    compararSabores,
     PREGUNTAS, PERFILES, medioRango, puntuacionDe,
     PROCESO_A_RECETAS, METODO_A_RECETAS
   };
