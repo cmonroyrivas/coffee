@@ -44,13 +44,19 @@ const APP = (() => {
   function bandaOffline() {
     const b = $('#bandaOffline');
     const p = DB.pendientes();
+    const f = DB.fallidas().length;
+    const rechazados = f
+      ? ` ${f} cambio${f === 1 ? '' : 's'} no se pudo guardar: mira ☰ → Diagnóstico.`
+      : '';
     if (!navigator.onLine) {
-      $('#bandaOfflineTxt').textContent = p
+      $('#bandaOfflineTxt').textContent = (p
         ? `Sin conexión. ${p} cambio${p === 1 ? '' : 's'} guardado${p === 1 ? '' : 's'} aquí, se suben cuando vuelva.`
-        : 'Sin conexión. Puedes seguir registrando: se sube solo cuando vuelva.';
+        : 'Sin conexión. Puedes seguir registrando: se sube solo cuando vuelva.') + rechazados;
       b.classList.add('show');
-    } else if (p) {
-      $('#bandaOfflineTxt').textContent = `Subiendo ${p} cambio${p === 1 ? '' : 's'} pendiente${p === 1 ? '' : 's'}…`;
+    } else if (p || f) {
+      $('#bandaOfflineTxt').textContent = (p
+        ? `Subiendo ${p} cambio${p === 1 ? '' : 's'} pendiente${p === 1 ? '' : 's'}…`
+        : 'Todo al día.') + rechazados;
       b.classList.add('show');
     } else {
       b.classList.remove('show');
@@ -161,6 +167,15 @@ const APP = (() => {
     compra: 'Compra', apertura: 'Apertura de la bolsa', preparacion: 'Preparación',
     ajuste: 'Ajuste manual', merma: 'Merma', regalo: 'Regalo', muestra: 'Muestra',
     descarte: 'Descarte', devolucion: 'Devolución'
+  };
+
+  /* Para nombrar en Diagnóstico un cambio que quedó sin subir */
+  const ETIQUETA_TABLA = {
+    inventory_movements: 'Movimiento de inventario', inventory_lots: 'Bolsa',
+    coffees: 'Café', brew_sessions: 'Preparación', tasting_reviews: 'Evaluación',
+    review_descriptors: 'Sabores de una evaluación', recipes: 'Receta',
+    recipe_versions: 'Versión de receta', recipe_steps: 'Pasos de receta',
+    roasters: 'Tostador', profiles: 'Tus ajustes'
   };
 
   /* ============================================================
@@ -1992,6 +2007,21 @@ const APP = (() => {
           <div class="dato"><span class="dato-k">Backend</span><span class="dato-v">${DB.hayBackend ? 'Disponible' : 'No cargó (modo caché)'}</span></div>
           <div class="dato"><span class="dato-k">Datos mostrados</span><span class="dato-v">${DB.estado.desdeCache ? 'Desde este dispositivo' : 'Del servidor'}</span></div>
         </div>
+        ${DB.fallidas().length ? `<div class="nota nota-ojo" style="margin-top:12px">
+          <b>${DB.fallidas().length} cambio${DB.fallidas().length === 1 ? '' : 's'} que no se pudo guardar.</b>
+          Reintentar no sirve: el dato no cuadra y va a fallar igual. Mira el motivo, vuelve a hacer
+          la operación con el número correcto, y descarta esto para que deje de aparecer.
+        </div>
+        ${DB.fallidas().map(o => `<div class="card card-p" style="margin-bottom:10px">
+          <div style="font-size:var(--tx-xs);color:var(--t3);text-transform:uppercase;letter-spacing:.08em">
+            ${esc(ETIQUETA_TABLA[o.tabla] || o.tabla)} · ${DB.fecha(o.cuando)}</div>
+          <p style="font-size:var(--tx-sm);margin:6px 0">${esc(mensajeError({ message: o.ultimoError || '' }))}</p>
+          <details class="avanzado" style="margin:8px 0 0">
+            <summary>Ver el dato exacto</summary>
+            <pre style="font-size:var(--tx-xs);color:var(--t3);white-space:pre-wrap;word-break:break-word;margin:8px 0 0">${esc(JSON.stringify(o.datos, null, 1))}</pre>
+          </details>
+          <button class="btn btn-peligro btn-bloque" style="margin-top:10px" onclick="APP.descartarFallida('${esc(o.id)}')">Descartar este cambio</button>
+        </div>`).join('')}` : ''}
         ${errs.length ? `<details class="avanzado" style="margin-top:12px">
           <summary>Últimos errores (${errs.length})</summary>
           ${errs.slice(0, 8).map(e => `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0">
@@ -2067,6 +2097,19 @@ const APP = (() => {
     if (/dosis_g|agua_g/i.test(m)) return 'La dosis y el agua tienen que ser mayores que cero.';
     if (/puntuacion_personal/i.test(m)) return 'La puntuación tiene que estar entre 1 y 10.';
     return 'No se pudo guardar: ' + m;
+  }
+
+  async function descartarFallida(id) {
+    const op = DB.fallidas().find(o => o.id === id);
+    if (!op) return;
+    const ok = await confirmar('Descartar este cambio',
+      'Este cambio no se pudo guardar y no se va a poder. Si lo descartas desaparece de la lista ' +
+      'y queda anotado en los errores. Nada de lo que ya está guardado se toca.',
+      'Sí, descartarlo', true);
+    if (!ok) { abrirPerfil(); return; }
+    DB.descartarFallida(id);
+    toast('Cambio descartado.');
+    abrirPerfil();
   }
 
   async function recargar() {
@@ -2162,6 +2205,6 @@ const APP = (() => {
   return {
     irA, cerrarModal, formCafe, formLote, formMovimiento, detalleCafe,
     prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta, bitacoraTab,
-    borrarCafe, borrarPreparacion: borrarPrep, forzarSync, salir, abrirPerfil, toast
+    borrarCafe, borrarPreparacion: borrarPrep, forzarSync, descartarFallida, salir, abrirPerfil, toast
   };
 })();

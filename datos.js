@@ -135,6 +135,29 @@ const DB = (() => {
     catch (e) { return []; }
   }
 
+  /* Distingue "la base rechazo esto y siempre lo va a rechazar" de "fallo la red".
+     Lo primero hay que avisarlo; lo segundo se reintenta.
+
+     B-18: faltaba P0001, que es el codigo de RAISE EXCEPTION en un trigger. Es
+     justo el de los mensajes propios del inventario ("No alcanza: el lote tiene
+     X g..."), asi que un ajuste imposible se encolaba y se reintentaba para
+     siempre, dejando el aviso pegado en "Subiendo N cambios pendientes...". */
+  const CODIGOS_VALIDACION = [
+    '23514',  // check constraint
+    '23505',  // clave duplicada
+    '23503',  // clave foranea
+    '23502',  // columna obligatoria en null
+    '22003',  // fuera de rango numerico
+    '22P02',  // tipo invalido
+    'P0001',  // RAISE EXCEPTION de un trigger
+    '42501'   // permisos: reintentar no lo va a arreglar
+  ];
+  function esValidacion(e) {
+    if (!e) return false;
+    if (CODIGOS_VALIDACION.includes(e.code)) return true;
+    return /violates|check constraint|no alcanza|permission denied/i.test(e.message || '');
+  }
+
   /* ================== B-03: cola de escrituras sin conexion ================== */
 
   function leerCola() {
@@ -151,7 +174,21 @@ const DB = (() => {
     guardarCola(c);
     document.dispatchEvent(new CustomEvent('cola:cambio', { detail: { pendientes: c.length } }));
   }
-  function pendientes() { return leerCola().length; }
+  /* Una operacion rechazada por una validacion de la base NO se puede reintentar:
+     por mas veces que se mande va a fallar igual. Se separa de las que si van a
+     subir cuando vuelva la conexion, para que el aviso no quede pegado en
+     "Subiendo N cambios..." para siempre. */
+  function pendientes() { return leerCola().filter(o => !o.fallida).length; }
+  function fallidas() { return leerCola().filter(o => o.fallida); }
+
+  /* Descarta una operacion que la base rechazo. Queda registrada en Diagnostico. */
+  function descartarFallida(id) {
+    const c = leerCola();
+    const op = c.find(o => o.id === id);
+    if (op) registrarError('descartada/' + op.tabla, 'Se descarto un cambio que la base rechazo: ' + (op.ultimoError || ''));
+    guardarCola(c.filter(o => o.id !== id));
+    document.dispatchEvent(new CustomEvent('cola:cambio', { detail: { pendientes: pendientes() } }));
+  }
 
   async function sincronizar() {
     if (!hayBackend || !usuario || !navigator.onLine) return { enviadas: 0, pendientes: pendientes() };
@@ -161,20 +198,24 @@ const DB = (() => {
     const quedan = [];
     let enviadas = 0;
     for (const op of cola) {
+      if (op.fallida) { quedan.push(op); continue; }   // la base ya la rechazo: no se reintenta
       try {
         await ejecutar(op, true);
         enviadas++;
       } catch (e) {
         op.intentos = (op.intentos || 0) + 1;
         op.ultimoError = (e && e.message) ? e.message : String(e);
+        // Si la base la rechazo por una validacion, reintentar no sirve: se marca
+        // como fallida para que se vea en Diagnostico y se pueda descartar. Nunca
+        // se borra sola: perder un cambio en silencio es peor que dejarlo visible.
+        if (esValidacion(e)) op.fallida = true;
         registrarError('sincronizar/' + op.tabla, e);
-        // Tras 5 intentos se deja de reintentar pero NO se borra: queda visible.
         quedan.push(op);
       }
     }
     guardarCola(quedan);
-    document.dispatchEvent(new CustomEvent('cola:cambio', { detail: { pendientes: quedan.length } }));
-    return { enviadas, pendientes: quedan.length };
+    document.dispatchEvent(new CustomEvent('cola:cambio', { detail: { pendientes: pendientes() } }));
+    return { enviadas, pendientes: pendientes(), fallidas: quedan.filter(o => o.fallida).length };
   }
 
   window.addEventListener('online', () => sincronizar().then(r => {
@@ -221,10 +262,8 @@ const DB = (() => {
       const datos = await ejecutar(op);
       return { encolado: false, datos };
     } catch (e) {
-      // Errores de validacion (constraint) NO se encolan: hay que avisar a la persona.
-      const esValidacion = e && (e.code === '23514' || e.code === '23505' || e.code === '23503'
-                                 || /violates|check constraint/i.test(e.message || ''));
-      if (esValidacion) throw e;
+      // Errores de validacion NO se encolan: hay que avisar a la persona.
+      if (esValidacion(e)) throw e;
       encolar(op);
       registrarError('escribir/' + op.tabla, e);
       return { encolado: true, datos: null };
@@ -266,6 +305,8 @@ const DB = (() => {
   async function salir() {
     // No se borra la cache antes de sincronizar: eso perdia datos en la v2.
     const r = await sincronizar();
+    // Solo bloquean los que TODAVIA pueden subir. Los rechazados por la base no
+    // van a subir nunca: si bloquearan, no se podria cerrar sesion jamas.
     if (r.pendientes > 0) {
       throw new Error(`Quedan ${r.pendientes} cambios sin subir. Conectate antes de salir para no perderlos.`);
     }
@@ -748,7 +789,8 @@ const DB = (() => {
   return {
     // infraestructura
     get sb() { return sb; }, get usuario() { return usuario; }, get hayBackend() { return hayBackend; },
-    estado, cargarTodo, sincronizar, pendientes, errores, registrarError,
+    estado, cargarTodo, sincronizar, pendientes, fallidas, descartarFallida,
+    errores, registrarError, esValidacion,
     sesionActual, enviarCodigo, verificarCodigo, salir,
     // utilidades
     hoy, ahora, esc, escAttr, num, clp, fecha, diasEntre, segundosATexto, textoASegundos,
