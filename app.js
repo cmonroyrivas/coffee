@@ -609,7 +609,7 @@ const APP = (() => {
         resumen = `Tu mejor resultado con este café fue en ${DB.metodo(mejorP.p.method_id).nombre}` +
           (mejorP.p.ratio ? `, ratio 1:${(+mejorP.p.ratio).toFixed(1)}` : '') +
           (mejorP.p.temperatura_c ? `, ${mejorP.p.temperatura_c} °C` : '') +
-          (mejorP.p.molienda_ajuste !== null ? `, molienda ${mejorP.p.molienda_ajuste}` : '') + '. ' +
+          (mejorP.p.molienda_ajuste != null ? `, molienda ${mejorP.p.molienda_ajuste}` : '') + '. ' +
           (Object.keys(porMet).length > 1
             ? `De los métodos que probaste, ${DB.metodo(mejorMet.k).nombre} promedia mejor (${mejorMet.prom.toFixed(1)} en ${mejorMet.n}).`
             : `Todavía lo has preparado solo en ${DB.metodo(mejorMet.k).nombre}: no se puede comparar entre métodos.`);
@@ -780,6 +780,7 @@ const APP = (() => {
     const c = DB.cafe(p.coffee_id);
     const cata = DB.cataDe(p.id);
     const pts = MOTOR.puntuacionDe(p);
+    const nSabores = cata ? DB.descriptoresDeCata(cata.id).length : 0;
     return `<div class="card card-p" style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
         <b>${esc(DB.metodo(p.method_id).nombre)}</b>
@@ -790,17 +791,21 @@ const APP = (() => {
         <span><b>${p.dosis_g}</b> g</span><span><b>${p.agua_g}</b> g agua</span>
         <span>1:${p.ratio ? (+p.ratio).toFixed(1) : '—'}</span>
         ${p.temperatura_c ? `<span>${p.temperatura_c} °C</span>` : ''}
-        ${p.molienda_ajuste !== null ? `<span>mol. ${p.molienda_ajuste}</span>` : ''}
+        ${p.molienda_ajuste != null ? `<span>mol. ${p.molienda_ajuste}</span>` : ''}
         ${p.tiempo_total_seg ? `<span>${DB.segundosATexto(p.tiempo_total_seg)}</span>` : ''}
-        ${p.dias_desde_tueste !== null ? `<span>${p.dias_desde_tueste} d del tueste</span>` : ''}
+        ${p.dias_desde_tueste != null ? `<span>${p.dias_desde_tueste} d del tueste</span>` : ''}
       </div>
-      ${pts !== null ? `<div style="margin-top:8px"><span class="chip ${pts >= 8 ? 'ok' : pts >= 6 ? '' : 'warn'}">${pts.toFixed(1)}/10${cata && cata.valoracion_1a5 && cata.puntuacion_personal === null ? ' (desde 1–5)' : ''}</span></div>` : `
+      ${pts !== null ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="chip ${pts >= 8 ? 'ok' : pts >= 6 ? '' : 'warn'}">${pts.toFixed(1)}/10${cata && cata.valoracion_1a5 && cata.puntuacion_personal === null ? ' (desde 1–5)' : ''}</span>
+          ${nSabores ? `<span class="chip">${nSabores} sabor${nSabores === 1 ? '' : 'es'}</span>` : ''}
+        </div>` : `
         <div style="margin-top:8px"><button class="btn btn-pri" onclick="APP.formEvaluacion('${p.id}')">Evaluar ahora</button></div>`}
       ${p.comentarios ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:8px 0 0">${esc(p.comentarios)}</p>` : ''}
       ${p.ajuste_sugerido ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0"><b>Para la próxima:</b> ${esc(p.ajuste_sugerido)}</p>` : ''}
       ${p.notas_migracion ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">${esc(p.notas_migracion)}</p>` : ''}
       <div class="btn-fila" style="margin-top:10px">
         <button class="btn btn-fant" onclick="APP.prepararCon('${p.coffee_id}','${p.lot_id || ''}','${p.method_id}',${p.dosis_g},${p.agua_g},${p.temperatura_c || 'null'},${p.molienda_ajuste === null ? 'null' : p.molienda_ajuste},${p.tiempo_total_seg || 'null'})">Repetir</button>
+        ${pts !== null ? `<button class="btn btn-fant" onclick="APP.formEvaluacion('${p.id}')">${nSabores ? 'Editar evaluación' : '＋ Anotar sabores'}</button>` : ''}
         <button class="btn btn-fant" onclick="APP.borrarPreparacion('${p.id}')">Eliminar</button>
       </div>
     </div>`;
@@ -1183,7 +1188,7 @@ const APP = (() => {
             <span><b>${v.dosis_g}</b> g</span><span><b>${v.agua_g}</b> g agua</span>
             <span>1:${(+v.ratio).toFixed(1)}</span>
             ${v.temperatura_c ? `<span>${v.temperatura_c} °C</span>` : ''}
-            ${v.molienda_ajuste !== null ? `<span>mol. ${v.molienda_ajuste}</span>` : ''}
+            ${v.molienda_ajuste != null ? `<span>mol. ${v.molienda_ajuste}</span>` : ''}
           </div>` : ''}
           <div class="btn-fila" style="margin-top:12px">
             ${v && c ? `<button class="btn btn-pri" onclick="APP.prepararCon('${c.id}','','${r.method_id}',${v.dosis_g},${v.agua_g},${v.temperatura_c || 'null'},${v.molienda_ajuste ?? 'null'},${v.tiempo_total_seg || 'null'},'${r.id}','${v.id}')">Preparar</button>` : ''}
@@ -1602,7 +1607,7 @@ const APP = (() => {
         </div></div>
 
       <details class="avanzado">
-        <summary>Detallar los 11 atributos y los sabores…</summary>
+        <summary>Detallar los 11 atributos${Object.keys(evalTmp.atributos).length ? ` (${Object.keys(evalTmp.atributos).length} puestos)` : ''}…</summary>
         <div style="margin-top:12px">
           ${atributos.map(([k, l]) => `
             <div class="campo"><label id="lb-${k}">${l} (1 a 5)</label>
@@ -1610,11 +1615,13 @@ const APP = (() => {
                 ${Array.from({ length: 5 }, (_, i) => `<button type="button" data-v="${i + 1}" ${pres(evalTmp.atributos[k], i + 1)}>${i + 1}</button>`).join('')}
               </div></div>`).join('')}
         </div>
-        <div class="campo" style="margin-top:4px">
-          <label>¿Qué sabores reconociste?</label>
-          <div class="pista" style="margin-bottom:10px">Marca los que sientas. Al elegir uno vas a poder ajustar la intensidad, de 1 a 5.</div>
-          ${pintarSelectorSabores(sabsYa)}
-        </div>
+      </details>
+
+      <details class="avanzado" id="evSabores" ${sabsYa.length ? 'open' : ''}>
+        <summary>Rueda de sabores: ¿qué reconociste?${sabsYa.length ? ` (${sabsYa.length})` : ''}</summary>
+        <div class="pista" style="margin:10px 0">Marca los que sientas. Al elegir uno vas a poder ajustar la intensidad, de 1 a 5.
+          Después los ves comparados con las notas del tostador en la ficha del café, pestaña Sabores.</div>
+        ${pintarSelectorSabores(sabsYa)}
       </details>
 
       <fieldset><legend>Para saber qué ajustar</legend>
