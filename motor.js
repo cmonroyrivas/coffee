@@ -580,22 +580,85 @@ const MOTOR = (() => {
      descriptor dentro de las notas). No inventa relaciones que el
      texto no tenga.
      ============================================================ */
+  /* Se compara sin acentos, igual que el mapa de origenes: las notas de las
+     bolsas vienen escritas indistintamente "jazmin" o "jazmín". */
+  const sinAcento = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+  /* Coincidencia por PALABRA COMPLETA, no por subcadena. Con includes(), el
+     descriptor "ron" coincidia dentro de "toronja" y "uva" dentro de "uvas
+     pasas" de cualquier cosa: falsos positivos que hacen desconfiar de todo el
+     panel. Se acepta el plural (-s / -es) para no tener que cargar el plural de
+     cada uno de los 107 descriptores como sinonimo. */
+  function mencionado(texto, termino) {
+    const t = sinAcento(termino).trim();
+    if (t.length < 3) return false;   // demasiado corto para afirmar nada
+    const escapado = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^a-z0-9])' + escapado + '(es|s)?([^a-z0-9]|$)').test(texto);
+  }
+
   function compararSabores(notasTostador, descriptoresUsuario) {
-    // Se comparan sin acentos, igual que el mapa de origenes: las notas de las
-    // bolsas vienen escritas indistintamente "jazmin" o "jazmín".
-    const sinAcento = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     const texto = sinAcento(notasTostador || '');
     return descriptoresUsuario.map(d => {
-      const nombres = [d.descriptor.nombre, ...(d.descriptor.sinonimos || [])]
-        .filter(Boolean).map(sinAcento);
-      const coincideTostador = !!texto && nombres.some(n => texto.includes(n));
+      const nombres = [d.descriptor.nombre, ...(d.descriptor.sinonimos || [])].filter(Boolean);
+      const coincideTostador = !!texto && nombres.some(n => mencionado(texto, n));
       return { ...d, coincideTostador };
     });
   }
 
+  /* ============================================================
+     LISTA DE DESEOS: ¿esto se parece a lo que ya tienes? (art. 20)
+     ------------------------------------------------------------
+     Solo compara lo que esta declarado: pais, proceso y tostador.
+     No opina sobre el perfil de taza, porque de un cafe que no has
+     probado no se sabe a que sabe.
+     ============================================================ */
+  function parecidoAlInventario(deseo) {
+    const activos = DB.lotesActivos().map(l => DB.cafe(l.coffee_id)).filter(Boolean);
+    if (!activos.length) {
+      return { parecido: false, razones: [], mensaje: 'No tienes café activo: cualquier cosa que compres suma.' };
+    }
+    const razones = [], iguales = [];
+    const norm = s => sinAcento(s || '').trim();
+
+    if (deseo.pais && activos.some(c => norm(c.pais) === norm(deseo.pais))) {
+      const cs = activos.filter(c => norm(c.pais) === norm(deseo.pais));
+      razones.push(`ya tienes ${cs.length === 1 ? 'un café' : cs.length + ' cafés'} de ${deseo.pais}`);
+      iguales.push(...cs);
+    }
+    if (deseo.proceso_id) {
+      const fam = DB.proceso(deseo.proceso_id).familia;
+      const cs = activos.filter(c => DB.proceso(c.proceso_id).familia === fam);
+      if (cs.length) {
+        razones.push(`ya tienes ${cs.length === 1 ? 'un proceso' : cs.length + ' procesos'} ${fam}`);
+        iguales.push(...cs);
+      }
+    }
+    if (deseo.roaster_id) {
+      const cs = activos.filter(c => c.roaster_id === deseo.roaster_id);
+      if (cs.length) {
+        const t = DB.tostador(deseo.roaster_id);
+        razones.push(`ya tienes ${cs.length === 1 ? 'un café' : cs.length + ' cafés'} de ${t ? t.nombre : 'ese tostador'}`);
+        iguales.push(...cs);
+      }
+    }
+
+    /* Se avisa solo cuando coinciden DOS o mas señales. Con una sola
+       (por ejemplo, otro colombiano) no hay nada que objetar. */
+    const parecido = razones.length >= 2;
+    const nombres = [...new Set(iguales.map(c => c.nombre))];
+    return {
+      parecido, razones, nombres,
+      mensaje: parecido
+        ? `Se parece a lo que ya tienes: ${razones.join(' y ')}. Si buscas ampliar el mapa, mira lo que te falta antes de repetir.`
+        : razones.length === 1
+          ? `Coincide en una cosa con tu inventario (${razones[0]}), que no es mucho. Adelante.`
+          : 'No se parece a nada de lo que tienes activo.'
+    };
+  }
+
   return {
     recomendar, generarPasos, sugerirAjuste, brechasInventario, perfilPreferencias,
-    compararSabores,
+    compararSabores, mencionado, parecidoAlInventario,
     PREGUNTAS, PERFILES, medioRango, puntuacionDe,
     PROCESO_A_RECETAS, METODO_A_RECETAS
   };

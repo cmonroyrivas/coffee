@@ -289,7 +289,17 @@ details.avanzado summary{font-size:var(--tx-sm); font-weight:600; color:var(--t2
 .modal-cab h2{font-size:var(--tx-xl); flex:1}
 .modal-x{border:1px solid var(--border); background:var(--s0); border-radius:var(--r2);
   width:44px; height:44px; font-size:1.1rem; flex-shrink:0}
-.subtabs{display:flex; gap:var(--sp1); border-bottom:1px solid var(--border); margin-bottom:var(--sp4); overflow-x:auto}
+.subtabs{display:flex; gap:var(--sp1); border-bottom:1px solid var(--border); margin-bottom:var(--sp4);
+  overflow-x:auto; scrollbar-width:none; position:relative}
+.subtabs::-webkit-scrollbar{display:none}
+/* Sin esto no habia forma de saber que quedaban pestañas fuera de pantalla: en
+   teléfono se cortaban 4 de 6 y las últimas eran invisibles. La clase la pone el
+   JS solo cuando de verdad hay más a la derecha. */
+.subtabs-caja{position:relative}
+.subtabs-caja.hay-mas::after{content:''; position:absolute; top:0; right:0; width:38px; height:100%;
+  pointer-events:none; background:linear-gradient(to right, transparent, var(--s0) 72%)}
+.subtabs-caja.hay-mas::before{content:'›'; position:absolute; right:6px; top:50%; transform:translateY(-60%);
+  font-size:1.1rem; color:var(--ac); pointer-events:none; z-index:1; font-weight:700}
 .subtab{border:0; background:none; padding:var(--sp3) var(--sp3); font-size:var(--tx-sm); font-weight:600;
   color:var(--t3); border-bottom:2px solid transparent; white-space:nowrap; min-height:44px}
 .subtab[aria-selected="true"]{color:var(--ac2); border-bottom-color:var(--ac)}
@@ -429,7 +439,7 @@ table.tabla td{padding:var(--sp2); border-bottom:1px dashed var(--border)}
   <!-- ---------- BITÁCORA ---------- -->
   <section class="vista" id="v-bitacora" aria-labelledby="t-bitacora">
     <h1 class="h-vista" id="t-bitacora">Bitácora</h1>
-    <div class="subtabs" role="tablist" id="bitacoraTabs"></div>
+    <div class="subtabs-caja"><div class="subtabs" role="tablist" id="bitacoraTabs"></div></div>
     <div id="bitacoraContenido"></div>
   </section>
 

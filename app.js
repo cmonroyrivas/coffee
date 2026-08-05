@@ -622,12 +622,12 @@ const APP = (() => {
     }
 
     const html = `
-      <div class="subtabs" role="tablist">
+      <div class="subtabs-caja"><div class="subtabs" role="tablist">
         <button class="subtab" role="tab" aria-selected="true" data-st="perfil">Origen</button>
         <button class="subtab" role="tab" aria-selected="false" data-st="bolsas">Bolsas (${lotes.length})</button>
         <button class="subtab" role="tab" aria-selected="false" data-st="historial">Historial (${preps.length})</button>
         <button class="subtab" role="tab" aria-selected="false" data-st="sabores">Sabores</button>
-      </div>
+      </div></div>
 
       <div data-panel="perfil">
         <div class="cafe-zona ${claseProceso(c.proceso_id)}" style="border-radius:8px;margin-bottom:16px">
@@ -768,12 +768,33 @@ const APP = (() => {
       </div>`;
   }
 
+  /* Marca la caja de pestañas cuando quedan pestañas fuera de pantalla, y trae
+     la seleccionada a la vista. Sin esto, en teléfono se cortaban 4 de 6 y no
+     había ninguna señal de que existieran. */
+  function ajustarSubtabs(strip) {
+    if (!strip) return;
+    const caja = strip.closest('.subtabs-caja');
+    const revisar = () => {
+      if (!caja) return;
+      const queda = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
+      caja.classList.toggle('hay-mas', queda > 4);
+    };
+    strip.onscroll = revisar;
+    const activa = strip.querySelector('[aria-selected="true"]');
+    if (activa && typeof activa.scrollIntoView === 'function') {
+      try { activa.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (e) { /* jsdom */ }
+    }
+    revisar();
+  }
+
   function engancharSubtabs() {
     const cont = $('#modalCuerpo');
     cont.querySelectorAll('.subtab').forEach(b => b.onclick = () => {
       cont.querySelectorAll('.subtab').forEach(x => x.setAttribute('aria-selected', x === b));
       cont.querySelectorAll('[data-panel]').forEach(p => p.style.display = p.dataset.panel === b.dataset.st ? '' : 'none');
+      ajustarSubtabs(cont.querySelector('.subtabs'));
     });
+    ajustarSubtabs(cont.querySelector('.subtabs'));
   }
 
   function filaPreparacion(p) {
@@ -1193,6 +1214,7 @@ const APP = (() => {
           <div class="btn-fila" style="margin-top:12px">
             ${v && c ? `<button class="btn btn-pri" onclick="APP.prepararCon('${c.id}','','${r.method_id}',${v.dosis_g},${v.agua_g},${v.temperatura_c || 'null'},${v.molienda_ajuste ?? 'null'},${v.tiempo_total_seg || 'null'},'${r.id}','${v.id}')">Preparar</button>` : ''}
             ${v ? `<button class="btn btn-fant" onclick="APP.formDuplicarReceta('${r.id}')">Duplicar y ajustar</button>` : ''}
+            ${DB.versionesDe(r.id).length > 1 ? `<button class="btn btn-fant" onclick="APP.verVersiones('${r.id}')">Versiones (${DB.versionesDe(r.id).length})</button>` : ''}
           </div>
         </div>`;
       }).join('') : `<div class="nota">Todavía no tienes recetas guardadas. Cuando prepares algo que te guste, guárdalo como receta y podrás versionarlo.</div>`}
@@ -1228,6 +1250,90 @@ const APP = (() => {
       return iniciarPreparacion(cafeId, loteId || (r.lote ? r.lote.id : ''), r.metodo.id, r.dosis_g, r.agua_g, r.temperatura_c, r.molienda, r.tiempo_total_seg);
     }
     iniciarPreparacion(cafeId, loteId, methodId, dosis, agua, temp, molienda, tiempo, recetaId, versionId);
+  }
+
+  /* ============================================================
+     HISTORIAL DE VERSIONES DE UNA RECETA
+     Muestra de qué versión deriva cada una y qué se cambió, y
+     permite volver a una anterior sin borrar nada.
+     ============================================================ */
+  function verVersiones(recetaId) {
+    const r = DB.porId(DB.estado.recetas, recetaId);
+    if (!r) return;
+    const versiones = DB.versionesDe(recetaId);   // ya viene de mayor a menor
+    const actual = DB.versionActual(recetaId);
+    const c = r.coffee_id ? DB.cafe(r.coffee_id) : null;
+
+    /* Para cada versión, en qué se diferencia de aquella de la que derivó */
+    const CAMPOS = [
+      ['dosis_g', 'dosis', 'g'], ['agua_g', 'agua', 'g'], ['temperatura_c', 'temperatura', '°C'],
+      ['molienda_ajuste', 'molienda', ''], ['tiempo_total_seg', 'tiempo', 's']
+    ];
+    const difsDe = v => {
+      const padre = v.deriva_de ? DB.porId(DB.estado.versiones, v.deriva_de) : null;
+      if (!padre) return null;
+      const d = [];
+      CAMPOS.forEach(([k, etiqueta, unidad]) => {
+        const a = DB.num(padre[k]), b = DB.num(v[k]);
+        if (a === null && b === null) return;
+        if (a !== b) {
+          const fmt = x => x === null ? '—' : (k === 'tiempo_total_seg' ? DB.segundosATexto(x) : x + (unidad ? ' ' + unidad : ''));
+          d.push(`${etiqueta} ${fmt(a)} → ${fmt(b)}`);
+        }
+      });
+      return { padre, difs: d };
+    };
+
+    abrirModal(`Versiones · ${r.nombre}`, `
+      <p style="font-size:var(--tx-sm);color:var(--t2);margin:0 0 20px">
+        ${esc(DB.metodo(r.method_id).nombre)}${c ? ' · adaptada a ' + esc(c.nombre) : ' · receta base'}.
+        La versión en uso es la <b>${actual ? actual.version : 1}</b>.</p>
+
+      ${versiones.map(v => {
+        const esActual = actual && v.id === actual.id;
+        const cmp = difsDe(v);
+        const usos = DB.estado.preparaciones.filter(p => p.version_id === v.id && !p.deleted_at).length;
+        return `<div class="card card-p" style="margin-bottom:12px;${esActual ? 'border-color:var(--ac)' : ''}">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+            <b>Versión ${v.version}</b>
+            ${esActual ? '<span class="chip ok">en uso</span>' : ''}
+          </div>
+          <div style="font-size:var(--tx-xs);color:var(--t3);margin-top:3px">
+            ${DB.fecha(v.created_at)} · ${usos} preparacion${usos === 1 ? '' : 'es'} con esta versión
+          </div>
+          <div class="cafe-meta" style="margin-top:8px">
+            <span><b>${v.dosis_g}</b> g</span><span><b>${v.agua_g}</b> g agua</span>
+            <span>1:${(+v.ratio).toFixed(1)}</span>
+            ${v.temperatura_c ? `<span>${v.temperatura_c} °C</span>` : ''}
+            ${v.molienda_ajuste != null ? `<span>mol. ${v.molienda_ajuste}</span>` : ''}
+            ${v.tiempo_total_seg ? `<span>${DB.segundosATexto(v.tiempo_total_seg)}</span>` : ''}
+          </div>
+          ${v.notas_cambio ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:10px 0 0">
+            <b>Qué cambiaste:</b> ${esc(v.notas_cambio)}</p>` : ''}
+          ${cmp ? (cmp.difs.length
+            ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">
+                 Respecto de la versión ${cmp.padre.version}: ${esc(cmp.difs.join(' · '))}</p>`
+            : `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">
+                 Mismos parámetros que la versión ${cmp.padre.version}.</p>`)
+            : `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">Es la versión original.</p>`}
+          ${!esActual ? `<button class="btn btn-fant btn-bloque" style="margin-top:10px"
+            onclick="APP.usarVersion('${recetaId}','${v.id}')">Volver a esta versión</button>` : ''}
+        </div>`;
+      }).join('')}
+
+      <div class="nota">Ninguna versión se borra. "Volver a esta versión" solo cambia cuál se usa por defecto
+        al preparar; el historial queda completo.</div>`);
+  }
+
+  async function usarVersion(recetaId, versionId) {
+    const v = DB.porId(DB.estado.versiones, versionId);
+    if (!v) return;
+    try {
+      await DB.editarReceta(recetaId, { version_actual: v.version });
+      toast(`Ahora se usa la versión ${v.version}.`);
+      cerrarModal();
+      await recargar();
+    } catch (e) { toast(mensajeError(e), 'error'); }
   }
 
   /* ============================================================
@@ -1731,16 +1837,19 @@ const APP = (() => {
     const sinEvaluar = DB.estado.preparaciones.filter(p => !DB.cataDe(p.id)).length;
     const tabs = [
       ['preparaciones', 'Preparaciones'], ['estadisticas', 'Estadísticas'],
-      ['preferencias', 'Tus preferencias'], ['brechas', 'Qué te falta'], ['aprende', 'Aprende']
+      ['preferencias', 'Tus preferencias'], ['brechas', 'Qué te falta'],
+      ['tostadores', 'Tostadores'], ['aprende', 'Aprende']
     ];
     $('#bitacoraTabs').innerHTML = tabs.map(([k, t]) =>
       `<button class="subtab" role="tab" aria-selected="${tabBitacora === k}" data-bt="${k}">${t}${k === 'preparaciones' && sinEvaluar ? ' ·' + sinEvaluar : ''}</button>`).join('');
     $$('#bitacoraTabs .subtab').forEach(b => b.onclick = () => { tabBitacora = b.dataset.bt; renderBitacora(); });
+    ajustarSubtabs($('#bitacoraTabs'));
 
     if (tabBitacora === 'preparaciones') pintarBitacoraPreps();
     else if (tabBitacora === 'estadisticas') pintarEstadisticas();
     else if (tabBitacora === 'preferencias') pintarPreferencias();
     else if (tabBitacora === 'brechas') pintarBrechas();
+    else if (tabBitacora === 'tostadores') pintarTostadores();
     else pintarAprende();
   }
 
@@ -1761,6 +1870,9 @@ const APP = (() => {
         <p>Cada preparación que registres queda acá con sus parámetros, para poder compararlas después.</p>
         <button class="btn btn-pri" onclick="APP.irA('preparar')">Preparar café</button></div>`;
     } else {
+      if (preps.length >= 2) {
+        h += `<button class="btn btn-bloque" id="btnComparar" style="margin-bottom:16px">Comparar dos preparaciones</button>`;
+      }
       let mesActual = '';
       preps.forEach(p => {
         const mes = new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
@@ -1769,6 +1881,126 @@ const APP = (() => {
       });
     }
     $('#bitacoraContenido').innerHTML = h;
+    if ($('#btnComparar')) $('#btnComparar').onclick = () => formComparar();
+  }
+
+  /* ============================================================
+     COMPARAR DOS PREPARACIONES LADO A LADO
+     Marca en qué se diferencian, para poder atribuir el resultado
+     a un cambio concreto y no a una impresión general.
+     ============================================================ */
+  function etiquetaPrep(p) {
+    const c = DB.cafe(p.coffee_id);
+    const pts = MOTOR.puntuacionDe(p);
+    return `${DB.fecha(p.fecha)} · ${c ? c.nombre : '—'} · ${DB.metodo(p.method_id).nombre}` +
+           (pts !== null ? ` · ${pts.toFixed(1)}/10` : ' · sin evaluar');
+  }
+
+  function formComparar(idA, idB) {
+    const preps = [...DB.estado.preparaciones].sort((a, b) => new Date(b.preparado_en) - new Date(a.preparado_en));
+    if (preps.length < 2) { toast('Necesitas al menos dos preparaciones registradas.', 'error'); return; }
+
+    /* Por defecto, las dos más recientes del mismo café: es la comparación que
+       de verdad sirve, porque cambia la receta y no el café. */
+    if (!idA || !idB) {
+      const porCafe = {};
+      preps.forEach(p => { (porCafe[p.coffee_id] = porCafe[p.coffee_id] || []).push(p); });
+      const conDos = Object.values(porCafe).find(v => v.length >= 2);
+      if (conDos) { idA = conDos[0].id; idB = conDos[1].id; }
+      else { idA = preps[0].id; idB = preps[1].id; }
+    }
+
+    const opciones = sel => preps.map(p =>
+      `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(etiquetaPrep(p))}</option>`).join('');
+
+    abrirModal('Comparar preparaciones', `
+      <div class="grid2">
+        <div class="campo"><label for="cmpA">Primera</label><select id="cmpA">${opciones(idA)}</select></div>
+        <div class="campo"><label for="cmpB">Segunda</label><select id="cmpB">${opciones(idB)}</select></div>
+      </div>
+      <div id="cmpResultado"></div>`);
+
+    const pintar = () => {
+      const a = DB.porId(DB.estado.preparaciones, $('#cmpA').value);
+      const b = DB.porId(DB.estado.preparaciones, $('#cmpB').value);
+      $('#cmpResultado').innerHTML = tablaComparacion(a, b);
+    };
+    $('#cmpA').onchange = pintar;
+    $('#cmpB').onchange = pintar;
+    pintar();
+  }
+
+  function tablaComparacion(a, b) {
+    if (!a || !b) return '';
+    if (a.id === b.id) return '<div class="nota nota-ojo">Elegiste la misma preparación dos veces.</div>';
+
+    const cA = DB.cafe(a.coffee_id), cB = DB.cafe(b.coffee_id);
+    const ctA = DB.cataDe(a.id), ctB = DB.cataDe(b.id);
+    const ptsA = MOTOR.puntuacionDe(a), ptsB = MOTOR.puntuacionDe(b);
+
+    const filas = [
+      ['Café', cA ? cA.nombre : '—', cB ? cB.nombre : '—'],
+      ['Método', DB.metodo(a.method_id).nombre, DB.metodo(b.method_id).nombre],
+      ['Fecha', DB.fecha(a.fecha), DB.fecha(b.fecha)],
+      ['Dosis', a.dosis_g != null ? a.dosis_g + ' g' : '—', b.dosis_g != null ? b.dosis_g + ' g' : '—'],
+      ['Agua', a.agua_g != null ? a.agua_g + ' g' : '—', b.agua_g != null ? b.agua_g + ' g' : '—'],
+      ['Ratio', a.ratio ? '1:' + (+a.ratio).toFixed(1) : '—', b.ratio ? '1:' + (+b.ratio).toFixed(1) : '—'],
+      ['Temperatura', a.temperatura_c != null ? a.temperatura_c + ' °C' : '—', b.temperatura_c != null ? b.temperatura_c + ' °C' : '—'],
+      ['Molienda', a.molienda_ajuste != null ? String(a.molienda_ajuste) : '—', b.molienda_ajuste != null ? String(b.molienda_ajuste) : '—'],
+      ['Tiempo', DB.segundosATexto(a.tiempo_total_seg), DB.segundosATexto(b.tiempo_total_seg)],
+      ['Días del tueste', a.dias_desde_tueste != null ? a.dias_desde_tueste + ' d' : '—', b.dias_desde_tueste != null ? b.dias_desde_tueste + ' d' : '—'],
+      ['Tu puntuación', ptsA !== null ? ptsA.toFixed(1) + '/10' : 'sin evaluar', ptsB !== null ? ptsB.toFixed(1) + '/10' : 'sin evaluar']
+    ];
+
+    const ATRIBUTOS = [['aroma', 'Aroma'], ['dulzor', 'Dulzor'], ['acidez', 'Acidez'], ['cuerpo', 'Cuerpo'],
+      ['sabor', 'Sabor'], ['balance', 'Balance'], ['retrogusto', 'Retrogusto'], ['claridad', 'Claridad'],
+      ['complejidad', 'Complejidad'], ['uniformidad', 'Uniformidad'], ['intensidad', 'Intensidad']];
+    ATRIBUTOS.forEach(([k, l]) => {
+      const va = ctA ? DB.num(ctA[k]) : null, vb = ctB ? DB.num(ctB[k]) : null;
+      if (va !== null || vb !== null) filas.push([l, va !== null ? String(va) : '—', vb !== null ? String(vb) : '—']);
+    });
+
+    /* Qué cambió entre las dos, en los parámetros que se pueden mover */
+    const MOVIBLES = [['dosis_g', 'la dosis'], ['ratio', 'el ratio'], ['temperatura_c', 'la temperatura'],
+                      ['molienda_ajuste', 'la molienda'], ['tiempo_total_seg', 'el tiempo']];
+    const cambios = MOVIBLES.filter(([k]) => DB.num(a[k]) !== DB.num(b[k])).map(([, l]) => l);
+
+    let lectura;
+    if (a.coffee_id !== b.coffee_id) {
+      lectura = 'Son cafés distintos, así que la diferencia de puntuación no se puede atribuir a la receta.';
+    } else if (!cambios.length) {
+      lectura = 'Mismos parámetros en las dos. Si el resultado fue distinto, la causa está fuera de la receta: la molienda real, el agua, la temperatura de la taza o los días desde el tueste.';
+    } else if (cambios.length === 1) {
+      lectura = `La única diferencia es ${cambios[0]}. Es la comparación más útil que hay: lo que cambió en la taza se le puede atribuir a eso.`;
+    } else {
+      lectura = `Cambiaron ${cambios.length} cosas a la vez (${cambios.join(', ')}), así que no se puede saber cuál explica la diferencia. Para la próxima, mueve una sola.`;
+    }
+
+    /* descriptoresDeCata devuelve las filas crudas: hay que resolver el nombre */
+    const sabores = cata => (cata ? DB.descriptoresDeCata(cata.id) : [])
+      .map(s => ({ d: DB.descriptor(s.descriptor_id), intensidad: DB.num(s.intensidad, 3), esDefecto: !!s.es_defecto }))
+      .filter(s => s.d);
+    const sabA = sabores(ctA), sabB = sabores(ctB);
+
+    return `
+      <table class="tabla" style="margin-top:8px">
+        <thead><tr><th></th><th>Primera</th><th>Segunda</th></tr></thead>
+        <tbody>${filas.map(([k, va, vb]) => `
+          <tr${va !== vb ? ' style="background:var(--ac-light)"' : ''}>
+            <td style="color:var(--t3)">${esc(k)}</td>
+            <td${va !== vb ? ' style="font-weight:700"' : ''}>${esc(va)}</td>
+            <td${va !== vb ? ' style="font-weight:700"' : ''}>${esc(vb)}</td>
+          </tr>`).join('')}</tbody>
+      </table>
+      ${sabA.length || sabB.length ? `<div class="seccion" style="margin-top:20px">
+        <div class="seccion-tit">Sabores que anotaste</div>
+        <div class="grid2">
+          <div>${sabA.length ? sabA.map(s => `<span class="chip ${s.esDefecto ? 'bad' : ''}">${esc(s.d.nombre)} · ${s.intensidad}</span> `).join('') : '<span class="pista">Ninguno</span>'}</div>
+          <div>${sabB.length ? sabB.map(s => `<span class="chip ${s.esDefecto ? 'bad' : ''}">${esc(s.d.nombre)} · ${s.intensidad}</span> `).join('') : '<span class="pista">Ninguno</span>'}</div>
+        </div>
+      </div>` : ''}
+      <div class="nota">${esc(lectura)}</div>
+      <p style="font-size:var(--tx-xs);color:var(--t3)">Las filas resaltadas son las que difieren.</p>`;
   }
 
   function pintarEstadisticas() {
@@ -1872,7 +2104,321 @@ const APP = (() => {
               <span class="chip ${x.prioridad === 1 ? 'warn' : ''}">prioridad ${x.prioridad}</span>
             </div>
             <p style="font-size:var(--tx-sm);color:var(--t2);margin:8px 0 0">${esc(x.desc)}</p>
-          </div>`).join('')}`;
+          </div>`).join('')}
+      ${bloqueDeseos()}`;
+    engancharDeseos();
+  }
+
+  /* ============================================================
+     FICHAS DE TOSTADORES CON RANKING PERSONAL
+     El orden sale de lo que ELLA evaluó, no de lo que declara el
+     tostador. Los que no tienen con qué promediar van al final y
+     lo dicen, en vez de aparecer con un 0.
+     ============================================================ */
+  function pintarTostadores() {
+    const conResumen = DB.estado.tostadores
+      .map(t => ({ t, r: DB.resumenTostador(t.id) }))
+      .sort((a, b) => {
+        if ((a.r.valoracion === null) !== (b.r.valoracion === null)) return a.r.valoracion === null ? 1 : -1;
+        if (a.r.valoracion !== b.r.valoracion) return (b.r.valoracion || 0) - (a.r.valoracion || 0);
+        return b.r.nCafes - a.r.nCafes;
+      });
+    const conNota = conResumen.filter(x => x.r.valoracion !== null);
+
+    let h = `<div class="card card-p" style="margin-bottom:20px">
+      <p style="font-size:var(--tx-sm);color:var(--t2);margin:0">
+        ${DB.estado.tostadores.length} tostadores en tu historia.
+        ${conNota.length
+          ? `Puedes comparar ${conNota.length} de ellos, porque son los que tienen cafés evaluados.`
+          : 'Todavía no hay ninguno con cafés evaluados, así que no se puede rankear nada sin inventarlo.'}</p>
+      <p style="font-size:var(--tx-xs);color:var(--t3);margin:10px 0 0">
+        El orden sale de <b>tus</b> valoraciones, llevadas a escala 1–10. No es un juicio sobre el tostador:
+        es cómo te resultaron los cafés suyos que probaste.</p>
+    </div>`;
+
+    if (!DB.estado.tostadores.length) {
+      h += `<div class="vacio"><div class="vacio-ico" aria-hidden="true">◈</div>
+        <h3>Sin tostadores</h3><p>Se crean solos cuando agregas un café y escribes quién lo tostó.</p></div>`;
+      $('#bitacoraContenido').innerHTML = h;
+      return;
+    }
+
+    h += conResumen.map(({ t, r }, i) => `
+      <div class="card card-p" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+          <b style="font-family:var(--f-display);font-size:var(--tx-md)">
+            ${r.valoracion !== null ? '#' + (i + 1) + ' · ' : ''}${esc(t.nombre)}</b>
+          ${t.favorito ? '<span class="chip ok">favorito</span>' : ''}
+        </div>
+        <div class="datos" style="margin-top:10px">
+          <div class="dato"><span class="dato-k">Tu valoración</span><span class="dato-v">
+            ${r.valoracion !== null ? r.valoracion + '/10 · ' + r.nEvaluados + ' de ' + r.nCafes + ' evaluados' : 'Sin cafés evaluados'}</span></div>
+          <div class="dato"><span class="dato-k">Cafés suyos</span><span class="dato-v">${r.nCafes}</span></div>
+          ${r.recompraria || r.noRecompraria ? `<div class="dato"><span class="dato-k">Recompraría</span><span class="dato-v">
+            ${r.recompraria} sí${r.noRecompraria ? ' · ' + r.noRecompraria + ' no' : ''}</span></div>` : ''}
+          ${r.gasto ? `<div class="dato"><span class="dato-k">Gasto acumulado</span><span class="dato-v">${DB.clp(r.gasto)}</span></div>` : ''}
+          ${t.ciudad ? `<div class="dato"><span class="dato-k">Dónde</span><span class="dato-v">${esc(t.ciudad)}</span></div>` : ''}
+          ${t.envia_a_concepcion !== null && t.envia_a_concepcion !== undefined
+            ? `<div class="dato"><span class="dato-k">Envía a Concepción</span><span class="dato-v">${t.envia_a_concepcion ? 'Sí' : 'No'}</span></div>` : ''}
+        </div>
+        ${r.nEvaluados === 1 ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:8px 0 0">
+          Con un solo café evaluado esto no es una tendencia, es un dato.</p>` : ''}
+        <details class="avanzado" style="margin-top:10px">
+          <summary>Sus cafés (${r.nCafes})</summary>
+          ${r.cafes.map(c => {
+            const v = DB.valoracionPromedio(c.id);
+            return `<div class="dato"><span class="dato-k">${esc(c.nombre)}</span><span class="dato-v">
+              ${v ? v.valor.toFixed(1) + '/' + v.escala : 'sin evaluar'}</span></div>`;
+          }).join('')}
+        </details>
+        <div class="btn-fila" style="margin-top:10px">
+          <button class="btn btn-fant" data-tost="${esc(t.id)}">Editar ficha</button>
+        </div>
+      </div>`).join('');
+
+    $('#bitacoraContenido').innerHTML = h;
+    $$('[data-tost]').forEach(b => b.onclick = () => formTostador(b.dataset.tost));
+  }
+
+  function formTostador(id) {
+    const t = DB.tostador(id);
+    if (!t) return;
+    const escalas = [['exp_compra', 'Experiencia de compra'], ['transparencia', 'Transparencia con el origen'],
+                     ['consistencia', 'Consistencia entre bolsas']];
+    abrirModal(t.nombre, `
+      <form id="fmTost" novalidate>
+        <div class="grid2">
+          <div class="campo"><label for="tsCiudad">Ciudad</label>
+            <input id="tsCiudad" value="${esc(t.ciudad)}"></div>
+          <div class="campo"><label for="tsSitio">Sitio web o Instagram</label>
+            <input id="tsSitio" value="${esc(t.sitio_web || t.instagram || '')}"></div>
+        </div>
+
+        ${escalas.map(([k, l]) => `
+          <div class="campo"><label id="lbt-${k}">${l} (1 a 5)</label>
+            <div class="escala" role="group" aria-labelledby="lbt-${k}" data-tesc="${k}">
+              ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-v="${n}" aria-pressed="${DB.num(t[k]) === n}">${n}</button>`).join('')}
+            </div></div>`).join('')}
+
+        <div class="grid2">
+          <div class="campo"><label id="lbtEnvia">¿Envía a Concepción?</label>
+            <div class="si-no" role="group" aria-labelledby="lbtEnvia" id="tsEnvia">
+              <button type="button" data-v="1" aria-pressed="${t.envia_a_concepcion === true}">Sí</button>
+              <button type="button" data-v="0" aria-pressed="${t.envia_a_concepcion === false}">No</button>
+            </div></div>
+          <div class="campo"><label for="tsEnvio">Costo de envío</label>
+            <input id="tsEnvio" type="number" inputmode="numeric" step="500" value="${t.costo_envio || ''}"></div>
+        </div>
+
+        <div class="campo"><label id="lbtFav">¿Es uno de tus favoritos?</label>
+          <div class="si-no" role="group" aria-labelledby="lbtFav" id="tsFav">
+            <button type="button" data-v="1" aria-pressed="${t.favorito === true}">Sí</button>
+            <button type="button" data-v="0" aria-pressed="${t.favorito !== true}">No</button>
+          </div></div>
+
+        <div class="campo"><label for="tsComent">Tus comentarios</label>
+          <textarea id="tsComent" placeholder="Cómo atienden, si el tueste es parejo, si vale el envío…">${esc(t.comentarios)}</textarea></div>
+
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">Guardar</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    const tmp = { exp_compra: DB.num(t.exp_compra), transparencia: DB.num(t.transparencia),
+                  consistencia: DB.num(t.consistencia),
+                  envia: t.envia_a_concepcion === true ? true : t.envia_a_concepcion === false ? false : null,
+                  favorito: t.favorito === true };
+    $$('[data-tesc]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      tmp[g.dataset.tesc] = DB.num(b.dataset.v);
+    }));
+    const siNo = (sel, campo) => $$(sel + ' button').forEach(b => b.onclick = () => {
+      b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      tmp[campo] = b.dataset.v === '1';
+    });
+    siNo('#tsEnvia', 'envia');
+    siNo('#tsFav', 'favorito');
+
+    $('#fmTost').onsubmit = async e => {
+      e.preventDefault();
+      const sitio = $('#tsSitio').value.trim();
+      try {
+        await DB.editarTostador(t.id, {
+          ciudad: $('#tsCiudad').value.trim() || null,
+          sitio_web: /^https?:|\./i.test(sitio) ? sitio : null,
+          instagram: sitio && !/^https?:|\./i.test(sitio) ? sitio : null,
+          exp_compra: tmp.exp_compra, transparencia: tmp.transparencia, consistencia: tmp.consistencia,
+          envia_a_concepcion: tmp.envia, costo_envio: DB.num($('#tsEnvio').value),
+          favorito: tmp.favorito,
+          comentarios: $('#tsComent').value.trim() || null
+        });
+        toast('Ficha guardada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
+  }
+
+  /* ============================================================
+     LISTA DE DESEOS
+     ============================================================ */
+  const ETIQUETA_DESEO = {
+    me_interesa: 'Me interesa', proxima_compra: 'Próxima compra', esperar: 'Esperar',
+    agotado: 'Agotado', comprado: 'Comprado', descartado: 'Descartado'
+  };
+
+  function bloqueDeseos() {
+    const deseos = [...DB.estado.deseos]
+      .filter(d => !['comprado', 'descartado'].includes(d.estado))
+      .sort((a, b) => DB.num(a.prioridad, 3) - DB.num(b.prioridad, 3));
+    const cerrados = DB.estado.deseos.filter(d => ['comprado', 'descartado'].includes(d.estado));
+
+    return `<div class="seccion" style="margin-top:28px">
+      <div class="seccion-tit">Tu lista de deseos (${deseos.length})</div>
+      ${!deseos.length
+        ? `<div class="nota">Todavía no tienes nada anotado. Cuando veas un café que te interese, anótalo acá
+             y la app te dice si se parece demasiado a lo que ya tienes.</div>`
+        : deseos.map(d => {
+            const p = MOTOR.parecidoAlInventario(d);
+            const t = d.roaster_id ? DB.tostador(d.roaster_id) : null;
+            return `<div class="card card-p" style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+                <b style="font-family:var(--f-display);font-size:var(--tx-md)">${esc(d.nombre)}</b>
+                <span class="chip ${d.prioridad <= 2 ? 'warn' : ''}">${esc(ETIQUETA_DESEO[d.estado] || d.estado)}</span>
+              </div>
+              <div style="font-size:var(--tx-xs);color:var(--t3);margin-top:3px">
+                ${[t ? t.nombre : d.tostador_texto, d.pais, d.proceso_id ? DB.proceso(d.proceso_id).nombre : null]
+                  .filter(Boolean).map(esc).join(' · ') || 'Sin datos de origen'}
+                ${d.precio_estimado ? ' · ' + DB.clp(d.precio_estimado) : ''}
+              </div>
+              ${d.motivo_interes ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:8px 0 0">${esc(d.motivo_interes)}</p>` : ''}
+              ${d.lugar_venta ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">Dónde: ${esc(d.lugar_venta)}</p>` : ''}
+              ${p.parecido ? `<div class="nota nota-ojo" style="margin-top:10px">${esc(p.mensaje)}</div>`
+                           : `<p style="font-size:var(--tx-xs);color:var(--t3);margin:8px 0 0">${esc(p.mensaje)}</p>`}
+              <div class="btn-fila" style="margin-top:10px">
+                <button class="btn btn-fant" data-deseo-editar="${esc(d.id)}">Editar</button>
+                <button class="btn btn-fant" data-deseo-comprado="${esc(d.id)}">Ya lo compré</button>
+                <button class="btn btn-fant" data-deseo-borrar="${esc(d.id)}">Quitar</button>
+              </div>
+            </div>`;
+          }).join('')}
+      <button class="btn btn-pri btn-bloque" id="btnNuevoDeseo" style="margin-top:8px">＋ Anotar un café que quiero</button>
+      ${cerrados.length ? `<details class="avanzado" style="margin-top:12px">
+        <summary>Cerrados (${cerrados.length})</summary>
+        ${cerrados.map(d => `<p style="font-size:var(--tx-sm);color:var(--t3);margin:6px 0">
+          ${esc(d.nombre)} · ${esc(ETIQUETA_DESEO[d.estado] || d.estado)}</p>`).join('')}
+      </details>` : ''}
+    </div>`;
+  }
+
+  function engancharDeseos() {
+    if ($('#btnNuevoDeseo')) $('#btnNuevoDeseo').onclick = () => formDeseo();
+    $$('[data-deseo-editar]').forEach(b => b.onclick = () => formDeseo(b.dataset.deseoEditar));
+    $$('[data-deseo-comprado]').forEach(b => b.onclick = async () => {
+      try {
+        await DB.editarDeseo(b.dataset.deseoComprado, { estado: 'comprado' });
+        toast('Marcado como comprado. Agrégalo al inventario cuando llegue.');
+        await recargar();
+      } catch (e) { toast(mensajeError(e), 'error'); }
+    });
+    $$('[data-deseo-borrar]').forEach(b => b.onclick = async () => {
+      const d = DB.porId(DB.estado.deseos, b.dataset.deseoBorrar);
+      if (!d) return;
+      if (!await confirmar('Quitar de la lista', `Se quita "${d.nombre}" de tu lista de deseos.`, 'Sí, quitarlo', true)) return;
+      try { await DB.borrarDeseo(d.id); toast('Quitado.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+  }
+
+  function formDeseo(id) {
+    const d = id ? DB.porId(DB.estado.deseos, id) : null;
+    const procesos = DB.estado.procesos.filter(p => !p.user_id);
+    abrirModal(d ? 'Editar deseo' : 'Un café que quiero', `
+      <form id="fmDeseo" novalidate>
+        <div class="campo"><label for="dsNombre">Qué café es *</label>
+          <input id="dsNombre" value="${esc(d ? d.nombre : '')}" placeholder="Nombre, finca o cómo lo reconocerías">
+          <div class="msg-error">Ponle un nombre para poder reconocerlo.</div></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="dsTostador">Tostador</label>
+            <input id="dsTostador" list="dsTostadores" value="${esc(d ? (d.roaster_id ? (DB.tostador(d.roaster_id) || {}).nombre || '' : d.tostador_texto || '') : '')}">
+            <datalist id="dsTostadores">${DB.estado.tostadores.map(t => `<option value="${esc(t.nombre)}"></option>`).join('')}</datalist></div>
+          <div class="campo"><label for="dsPais">País</label>
+            <input id="dsPais" value="${esc(d ? d.pais : '')}"></div>
+        </div>
+
+        <div class="grid2">
+          <div class="campo"><label for="dsProceso">Proceso</label>
+            <select id="dsProceso"><option value="">No sé</option>
+              ${procesos.map(p => `<option value="${p.id}" ${d && d.proceso_id === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></div>
+          <div class="campo"><label for="dsPrecio">Precio estimado</label>
+            <input id="dsPrecio" type="number" inputmode="numeric" step="500" value="${d && d.precio_estimado ? d.precio_estimado : ''}"></div>
+        </div>
+
+        <div class="grid2">
+          <div class="campo"><label for="dsPrioridad">Prioridad</label>
+            <select id="dsPrioridad">${[1, 2, 3, 4, 5].map(n =>
+              `<option value="${n}" ${(d ? DB.num(d.prioridad, 3) : 3) === n ? 'selected' : ''}>${n}${n === 1 ? ' · lo quiero ya' : n === 5 ? ' · algún día' : ''}</option>`).join('')}</select></div>
+          <div class="campo"><label for="dsEstado">Estado</label>
+            <select id="dsEstado">${Object.entries(ETIQUETA_DESEO).map(([k, l]) =>
+              `<option value="${k}" ${(d ? d.estado : 'me_interesa') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="campo"><label for="dsLugar">Dónde se consigue</label>
+          <input id="dsLugar" value="${esc(d ? d.lugar_venta : '')}" placeholder="Tienda, web, cafetería"></div>
+
+        <div class="campo"><label for="dsMotivo">Por qué te interesa</label>
+          <textarea id="dsMotivo" placeholder="Lo probé en una cafetería; me lo recomendaron; quiero un africano…">${esc(d ? d.motivo_interes : '')}</textarea></div>
+
+        <div id="dsAviso"></div>
+
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">${d ? 'Guardar' : 'Anotar'}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    /* El aviso de parecido se actualiza mientras escribe, no despues de guardar */
+    const revisar = () => {
+      const t = DB.estado.tostadores.find(x => x.nombre.toLowerCase() === $('#dsTostador').value.trim().toLowerCase());
+      const p = MOTOR.parecidoAlInventario({
+        pais: $('#dsPais').value.trim(), proceso_id: $('#dsProceso').value || null,
+        roaster_id: t ? t.id : null
+      });
+      $('#dsAviso').innerHTML = p.parecido
+        ? `<div class="nota nota-ojo">${esc(p.mensaje)}</div>`
+        : (p.razones.length ? `<p class="pista">${esc(p.mensaje)}</p>` : '');
+    };
+    ['#dsPais', '#dsProceso', '#dsTostador'].forEach(s => {
+      $(s).onchange = revisar; $(s).oninput = revisar;
+    });
+    revisar();
+
+    $('#fmDeseo').onsubmit = async e => {
+      e.preventDefault();
+      const nombre = $('#dsNombre').value.trim();
+      $('#dsNombre').closest('.campo').classList.toggle('error', !nombre);
+      if (!nombre) { $('#dsNombre').focus(); return; }
+      try {
+        const nomTost = $('#dsTostador').value.trim();
+        const roaster_id = nomTost ? await DB.asegurarTostador(nomTost) : null;
+        const datos = {
+          nombre, roaster_id, tostador_texto: roaster_id ? null : (nomTost || null),
+          pais: $('#dsPais').value.trim() || null,
+          proceso_id: $('#dsProceso').value || null,
+          precio_estimado: DB.num($('#dsPrecio').value),
+          prioridad: DB.num($('#dsPrioridad').value, 3),
+          estado: $('#dsEstado').value,
+          lugar_venta: $('#dsLugar').value.trim() || null,
+          motivo_interes: $('#dsMotivo').value.trim() || null
+        };
+        if (d) await DB.editarDeseo(d.id, datos); else await DB.nuevoDeseo(datos);
+        toast(d ? 'Guardado.' : 'Anotado en tu lista.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
   }
 
   function pintarAprende() {
@@ -2220,7 +2766,8 @@ const APP = (() => {
   /* API publica para los onclick del HTML */
   return {
     irA, cerrarModal, formCafe, formLote, formMovimiento, detalleCafe,
-    prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta, bitacoraTab,
+    prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta,
+    verVersiones, usarVersion, formComparar, formDeseo, formTostador, bitacoraTab,
     borrarCafe, borrarPreparacion: borrarPrep, forzarSync, descartarFallida, salir, abrirPerfil, toast
   };
 })();

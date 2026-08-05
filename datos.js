@@ -322,7 +322,8 @@ const DB = (() => {
   const estado = {
     cafes: [], lotes: [], movimientos: [], recetas: [], versiones: [], pasos: [],
     preparaciones: [], catas: [], molinillos: [], metodos: [], procesos: [],
-    tostadores: [], descriptores: [], catDescriptores: [], descriptoresCata: [], perfil: null,
+    tostadores: [], descriptores: [], catDescriptores: [], descriptoresCata: [],
+    deseos: [], perfil: null,
     cargado: false, desdeCache: false
   };
 
@@ -337,7 +338,7 @@ const DB = (() => {
           molinillos: estado.molinillos, metodos: estado.metodos, procesos: estado.procesos,
           tostadores: estado.tostadores, descriptores: estado.descriptores,
           catDescriptores: estado.catDescriptores, descriptoresCata: estado.descriptoresCata,
-          perfil: estado.perfil
+          deseos: estado.deseos, perfil: estado.perfil
         }
       }));
     } catch (e) { registrarError('cache/guardar', e); }
@@ -377,7 +378,8 @@ const DB = (() => {
       ['tostadores', 'roasters', '*', 'nombre'],
       ['catDescriptores', 'flavor_categories', '*', 'orden'],
       ['descriptores', 'flavor_descriptors', '*', 'nombre'],
-      ['descriptoresCata', 'review_descriptors', '*', null]
+      ['descriptoresCata', 'review_descriptors', '*', null],
+      ['deseos', 'wishlist', '*', 'created_at']
     ];
 
     try {
@@ -393,7 +395,7 @@ const DB = (() => {
       });
 
       // Los soft-deleted no se muestran, pero se dejan en la base.
-      ['cafes', 'lotes', 'recetas', 'preparaciones', 'catas', 'molinillos', 'tostadores']
+      ['cafes', 'lotes', 'recetas', 'preparaciones', 'catas', 'molinillos', 'tostadores', 'deseos']
         .forEach(k => { estado[k] = estado[k].filter(x => !x.deleted_at); });
 
       const { data: perf } = await sb.from('profiles').select('*').maybeSingle();
@@ -480,6 +482,32 @@ const DB = (() => {
       })
       .filter(Boolean)
       .sort((a, b) => b.n - a.n);
+  }
+
+  /* ---------- tostadores: lo que se puede afirmar de cada uno ---------- */
+  function cafesDeTostador(roasterId) {
+    return estado.cafes.filter(c => c.roaster_id === roasterId);
+  }
+  /* Ranking propio: promedia lo que ella evaluo, no lo que declara el tostador.
+     Devuelve null en valoracion cuando no hay con que promediar, en vez de 0. */
+  function resumenTostador(roasterId) {
+    const cafes = cafesDeTostador(roasterId);
+    const notas = [];
+    cafes.forEach(c => {
+      const v = valoracionPromedio(c.id);
+      if (v) notas.push(v.escala === 5 ? v.valor * 2 : v.valor);
+    });
+    const gasto = estado.lotes
+      .filter(l => cafes.some(c => c.id === l.coffee_id))
+      .reduce((s, l) => s + num(l.precio_pagado, 0), 0);
+    return {
+      nCafes: cafes.length,
+      nEvaluados: notas.length,
+      valoracion: notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null,
+      recompraria: cafes.filter(c => c.recompraria === true).length,
+      noRecompraria: cafes.filter(c => c.recompraria === false).length,
+      gasto, cafes
+    };
   }
 
   const ESTADOS_ACTIVOS = ['sin_abrir', 'abierto', 'bajo_stock'];
@@ -688,6 +716,19 @@ const DB = (() => {
     return ri;
   }
 
+  async function nuevoDeseo(datos) {
+    return escribir({ accion: 'insert', tabla: 'wishlist', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarDeseo(id, datos) {
+    return escribir({ accion: 'update', tabla: 'wishlist', id, datos });
+  }
+  async function borrarDeseo(id) {
+    return escribir({ accion: 'delete_suave', tabla: 'wishlist', id });
+  }
+  async function editarTostador(id, datos) {
+    return escribir({ accion: 'update', tabla: 'roasters', id, datos });
+  }
+
   async function guardarPerfil(datos) {
     if (estado.perfil) return escribir({ accion: 'update', tabla: 'profiles', id: usuario.id, datos });
     return escribir({ accion: 'insert', tabla: 'profiles', datos: { ...datos, user_id: usuario.id } });
@@ -805,11 +846,13 @@ const DB = (() => {
     totalGramosDisponibles, tazasDisponiblesTotales, consumoUltimos,
     valoracionPromedio, metodoMasUsado, mejorCafe, ultimaPreparacion, recetaFavorita,
     descriptor, categoriaSabor, descriptoresDeCata, descriptoresDeCafe,
+    cafesDeTostador, resumenTostador,
     // escritura
     nuevoCafe, editarCafe, borrarCafe, nuevoLote, editarLote, nuevoMovimiento,
     nuevaReceta, editarReceta, nuevaVersion, nuevosPasos,
     nuevaPreparacion, editarPreparacion, borrarPreparacion,
     nuevaCata, editarCata, guardarDescriptoresCata, guardarPerfil, asegurarTostador,
+    nuevoDeseo, editarDeseo, borrarDeseo, editarTostador,
     // exportacion
     exportarInventarioCSV, exportarPreparacionesCSV, exportarTodoJSON, descargar
   };
