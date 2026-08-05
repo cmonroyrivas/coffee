@@ -2487,10 +2487,12 @@ const APP = (() => {
     const explorados = origenes.filter(tengo);
 
     $('#rutaContenido').innerHTML = `
+      ${bloqueCafeterias()}
+
       <div class="nota nota-info">
-        <b>Esta sección está en construcción.</b> Cafeterías, visitas, rankings ponderados, rutas de viaje
-        y el banco de contenido de Charlie en Ruta corresponden a la Fase 3 del plan.
-        La base de datos ya está diseñada para recibirlos sin migraciones destructivas.
+        Todavía faltan de esta sección el <b>ranking ponderado configurable</b> (elegir cuánto pesa el café,
+        la atención, el espacio y el precio), las <b>rutas</b>, el <b>banco de contenido</b> y las
+        <b>estadísticas de viaje</b>. Por ahora las notas se promedian todas por igual.
       </div>
 
       <div class="seccion"><div class="seccion-tit">Tu mapa de orígenes</div>
@@ -2510,6 +2512,373 @@ const APP = (() => {
             </div>`;
           }).join('')}
         </div></div>`;
+    engancharCafeterias();
+  }
+
+  /* ============================================================
+     FASE 3 · CAFETERÍAS Y VISITAS
+     ============================================================ */
+  const ETIQUETA_SHOP = {
+    quiero_ir: 'Quiero ir', visitada: 'Visitada', habitual: 'Habitual', descartada: 'Descartada'
+  };
+  const TIPO_SHOP = {
+    cafeteria: 'Cafetería', tostaduria: 'Tostaduría', ambas: 'Cafetería y tostaduría',
+    restaurante: 'Restaurante', otro: 'Otro'
+  };
+  const MOTIVO_VISITA = {
+    trabajar: 'A trabajar', social: 'Social', probar: 'A probar café', paseo: 'De paseo', otro: 'Otro'
+  };
+
+  function bloqueCafeterias() {
+    const shops = DB.estado.cafeterias;
+    if (!shops.length) {
+      return `<div class="seccion">
+        <div class="seccion-tit">Cafeterías</div>
+        <div class="vacio"><div class="vacio-ico" aria-hidden="true">◉</div>
+          <h3>Sin cafeterías todavía</h3>
+          <p>Anota las que quieres visitar y las que ya conoces. Cada visita guarda qué pediste,
+             cuánto pagaste y qué tal estuvo, y con eso después se puede comparar.</p>
+          <button class="btn btn-pri" id="btnNuevaCafeteria">＋ Agregar cafetería</button></div>
+      </div>`;
+    }
+
+    /* Orden: las que tienen nota primero, de mejor a peor; después el resto */
+    const conResumen = shops.map(s => ({ s, r: DB.resumenCafeteria(s.id) }))
+      .sort((a, b) => {
+        if ((a.r.nota === null) !== (b.r.nota === null)) return a.r.nota === null ? 1 : -1;
+        if (a.r.nota !== b.r.nota) return (b.r.nota || 0) - (a.r.nota || 0);
+        return a.s.nombre.localeCompare(b.s.nombre, 'es');
+      });
+    const totalVisitas = DB.estado.visitas.length;
+    const gastoTotal = DB.estado.visitas.reduce((s, v) => s + DB.num(v.precio, 0), 0);
+    const ciudades = new Set(shops.map(s => (s.ciudad || '').trim()).filter(Boolean));
+
+    return `<div class="seccion">
+      <div class="seccion-tit">Cafeterías (${shops.length})</div>
+      <div class="kpis" style="margin-bottom:16px">
+        <div class="kpi"><div class="kpi-n">${totalVisitas}</div><div class="kpi-l">Visitas</div></div>
+        <div class="kpi"><div class="kpi-n">${ciudades.size}</div><div class="kpi-l">Ciudades</div></div>
+        <div class="kpi"><div class="kpi-n">${shops.filter(s => s.estado_personal === 'quiero_ir').length}</div><div class="kpi-l">Por visitar</div></div>
+        <div class="kpi"><div class="kpi-n"><small>${gastoTotal ? DB.clp(gastoTotal) : '—'}</small></div><div class="kpi-l">Gastado fuera</div></div>
+      </div>
+
+      ${conResumen.map(({ s, r }) => `
+        <div class="card card-p" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+            <b style="font-family:var(--f-display);font-size:var(--tx-md)">${esc(s.nombre)}</b>
+            <span class="chip ${s.estado_personal === 'habitual' ? 'ok' : s.estado_personal === 'descartada' ? 'bad' : ''}">${esc(ETIQUETA_SHOP[s.estado_personal] || s.estado_personal)}</span>
+          </div>
+          <div style="font-size:var(--tx-xs);color:var(--t3);margin-top:3px">
+            ${[TIPO_SHOP[s.tipo] || s.tipo, s.comuna, s.ciudad].filter(Boolean).map(esc).join(' · ')}
+          </div>
+          ${r.nVisitas ? `<div class="cafe-meta" style="margin-top:8px">
+            <span><b>${r.nVisitas}</b> visita${r.nVisitas === 1 ? '' : 's'}</span>
+            ${r.nota !== null ? `<span><b>${r.nota}</b>/5</span>` : ''}
+            ${r.precioProm ? `<span>${DB.clp(r.precioProm)} promedio</span>` : ''}
+            ${r.ultima ? `<span>última: ${DB.fecha(r.ultima.fecha)}</span>` : ''}
+          </div>` : '<p style="font-size:var(--tx-xs);color:var(--t3);margin:8px 0 0">Sin visitas registradas.</p>'}
+          ${r.nConNota === 1 ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">
+            Con una sola visita evaluada esto no es una tendencia, es un dato.</p>` : ''}
+          ${[s.wifi ? 'wifi' : null, s.enchufes ? 'enchufes' : null, s.para_trabajar ? 'para trabajar' : null,
+             s.terraza ? 'terraza' : null, s.pet_friendly ? 'pet friendly' : null, s.vende_grano ? 'vende grano' : null]
+            .filter(Boolean).map(x => `<span class="chip">${x}</span>`).join(' ')}
+          ${s.notas ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:10px 0 0">${esc(s.notas)}</p>` : ''}
+          ${r.visitas.length ? `<details class="avanzado" style="margin-top:10px">
+            <summary>Visitas (${r.visitas.length})</summary>
+            ${r.visitas.map(v => filaVisita(v)).join('')}
+          </details>` : ''}
+          <div class="btn-fila" style="margin-top:10px">
+            <button class="btn btn-pri" data-visita-nueva="${esc(s.id)}">Registrar visita</button>
+            <button class="btn btn-fant" data-shop-editar="${esc(s.id)}">Editar</button>
+            <button class="btn btn-fant" data-shop-borrar="${esc(s.id)}">Eliminar</button>
+          </div>
+        </div>`).join('')}
+
+      <button class="btn btn-pri btn-bloque" id="btnNuevaCafeteria">＋ Agregar cafetería</button>
+    </div>`;
+  }
+
+  function filaVisita(v) {
+    const cata = DB.cataDeVisita(v.id);
+    const nota = DB.notaVisita(v);
+    const c = v.coffee_id ? DB.cafe(v.coffee_id) : null;
+    return `<div style="border-bottom:1px dashed var(--border);padding:10px 0">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+        <b style="font-size:var(--tx-sm)">${esc(v.que_pedi || 'Sin anotar qué pediste')}</b>
+        <span style="font-size:var(--tx-xs);color:var(--t3)">${DB.fecha(v.fecha)}</span>
+      </div>
+      <div class="cafe-meta" style="margin-top:6px">
+        ${nota !== null ? `<span><b>${nota}</b>/5</span>` : ''}
+        ${v.precio ? `<span>${DB.clp(v.precio)}</span>` : ''}
+        ${v.method_id ? `<span>${esc(DB.metodo(v.method_id).nombre)}</span>` : ''}
+        ${c ? `<span>${esc(c.nombre)}</span>` : v.origen_declarado ? `<span>${esc(v.origen_declarado)}</span>` : ''}
+        ${v.motivo ? `<span>${esc(MOTIVO_VISITA[v.motivo] || v.motivo)}</span>` : ''}
+        ${v.volveria === true ? '<span class="chip ok">volvería</span>' : v.volveria === false ? '<span class="chip bad">no volvería</span>' : ''}
+      </div>
+      ${cata ? `<p style="font-size:var(--tx-xs);color:var(--t3);margin:6px 0 0">
+        Catado: ${cata.puntuacion_personal !== null ? cata.puntuacion_personal + '/10' : 'sin puntuación'}${cata.notas ? ' · ' + esc(cata.notas) : ''}</p>` : ''}
+      ${v.notas ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:6px 0 0">${esc(v.notas)}</p>` : ''}
+      <div class="btn-fila" style="margin-top:8px">
+        <button class="btn btn-fant" data-visita-editar="${esc(v.id)}">Editar</button>
+        <button class="btn btn-fant" data-visita-borrar="${esc(v.id)}">Eliminar</button>
+      </div>
+    </div>`;
+  }
+
+  function engancharCafeterias() {
+    if ($('#btnNuevaCafeteria')) $('#btnNuevaCafeteria').onclick = () => formCafeteria();
+    $$('[data-shop-editar]').forEach(b => b.onclick = () => formCafeteria(b.dataset.shopEditar));
+    $$('[data-visita-nueva]').forEach(b => b.onclick = () => formVisita(b.dataset.visitaNueva));
+    $$('[data-visita-editar]').forEach(b => b.onclick = () => formVisita(null, b.dataset.visitaEditar));
+    $$('[data-shop-borrar]').forEach(b => b.onclick = async () => {
+      const s = DB.cafeteria(b.dataset.shopBorrar);
+      if (!s) return;
+      const r = DB.resumenCafeteria(s.id);
+      if (!await confirmar('Eliminar cafetería',
+        `Se elimina "${s.nombre}"${r.nVisitas ? ` y sus ${r.nVisitas} visita${r.nVisitas === 1 ? '' : 's'}` : ''}. Se puede recuperar desde la base.`,
+        'Sí, eliminar', true)) return;
+      try { await DB.borrarCafeteria(s.id); toast('Eliminada.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+    $$('[data-visita-borrar]').forEach(b => b.onclick = async () => {
+      if (!await confirmar('Eliminar visita', 'Se elimina esta visita y su cata, si la tenía.', 'Sí, eliminar', true)) return;
+      try { await DB.borrarVisita(b.dataset.visitaBorrar); toast('Eliminada.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+  }
+
+  function formCafeteria(id) {
+    const s = id ? DB.cafeteria(id) : null;
+    const sino = (campo, valor) => `
+      <div class="si-no" role="group" data-shop-bool="${campo}">
+        <button type="button" data-v="1" aria-pressed="${valor === true}">Sí</button>
+        <button type="button" data-v="0" aria-pressed="${valor === false}">No</button>
+      </div>`;
+
+    abrirModal(s ? s.nombre : 'Agregar cafetería', `
+      <form id="fmShop" novalidate>
+        <div class="campo"><label for="shNombre">Nombre *</label>
+          <input id="shNombre" value="${esc(s ? s.nombre : '')}">
+          <div class="msg-error">Ponle el nombre de la cafetería.</div></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="shTipo">Qué es</label>
+            <select id="shTipo">${Object.entries(TIPO_SHOP).map(([k, l]) =>
+              `<option value="${k}" ${(s ? s.tipo : 'cafeteria') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+          <div class="campo"><label for="shEstado">Tu relación con el lugar</label>
+            <select id="shEstado">${Object.entries(ETIQUETA_SHOP).map(([k, l]) =>
+              `<option value="${k}" ${(s ? s.estado_personal : 'quiero_ir') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="grid2">
+          <div class="campo"><label for="shCiudad">Ciudad</label>
+            <input id="shCiudad" value="${esc(s ? s.ciudad : (DB.estado.perfil && DB.estado.perfil.ciudad) || '')}"></div>
+          <div class="campo"><label for="shComuna">Comuna o barrio</label>
+            <input id="shComuna" value="${esc(s ? s.comuna : '')}"></div>
+        </div>
+
+        <div class="campo"><label for="shDireccion">Dirección</label>
+          <input id="shDireccion" value="${esc(s ? s.direccion : '')}"></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="shInsta">Instagram</label>
+            <input id="shInsta" value="${esc(s ? s.instagram : '')}" placeholder="@cuenta"></div>
+          <div class="campo"><label for="shHorario">Horario</label>
+            <input id="shHorario" value="${esc(s ? s.horario : '')}" placeholder="L–V 9 a 19"></div>
+        </div>
+
+        <details class="avanzado" ${s ? 'open' : ''}>
+          <summary>Cómo es el lugar…</summary>
+          <div class="grid2" style="margin-top:12px">
+            <div class="campo"><label>¿Tiene wifi?</label>${sino('wifi', s ? s.wifi : null)}</div>
+            <div class="campo"><label>¿Hay enchufes?</label>${sino('enchufes', s ? s.enchufes : null)}</div>
+          </div>
+          <div class="grid2">
+            <div class="campo"><label>¿Sirve para trabajar?</label>${sino('para_trabajar', s ? s.para_trabajar : null)}</div>
+            <div class="campo"><label>¿Tiene terraza?</label>${sino('terraza', s ? s.terraza : null)}</div>
+          </div>
+          <div class="grid2">
+            <div class="campo"><label>¿Aceptan mascotas?</label>${sino('pet_friendly', s ? s.pet_friendly : null)}</div>
+            <div class="campo"><label>¿Venden grano?</label>${sino('vende_grano', s ? s.vende_grano : null)}</div>
+          </div>
+          <div class="grid2">
+            <div class="campo"><label>¿Tuestan ellos?</label>${sino('tuesta_propio', s ? s.tuesta_propio : null)}</div>
+            <div class="campo"><label for="shPrecio">Rango de precio</label>
+              <select id="shPrecio"><option value="">No sé</option>
+                ${[1, 2, 3, 4].map(n => `<option value="${n}" ${DB.num(s && s.rango_precio) === n ? 'selected' : ''}>${'$'.repeat(n)}</option>`).join('')}</select></div>
+          </div>
+          <div class="campo"><label for="shTostador">¿De qué tostador sirven?</label>
+            <input id="shTostador" list="shTostadores" value="${esc(s && s.roaster_id ? (DB.tostador(s.roaster_id) || {}).nombre || '' : '')}">
+            <datalist id="shTostadores">${DB.estado.tostadores.map(t => `<option value="${esc(t.nombre)}"></option>`).join('')}</datalist></div>
+        </details>
+
+        <div class="campo"><label for="shComo">Cómo la conociste</label>
+          <input id="shComo" value="${esc(s ? s.como_la_conoci : '')}" placeholder="Me la recomendaron; pasé por fuera; Instagram"></div>
+
+        <div class="campo"><label for="shNotas">Notas</label>
+          <textarea id="shNotas" placeholder="Qué te gustó, qué no, a qué hora conviene ir…">${esc(s ? s.notas : '')}</textarea></div>
+
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">${s ? 'Guardar' : 'Agregar'}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    const bools = {};
+    $$('[data-shop-bool]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      bools[g.dataset.shopBool] = b.dataset.v === '1';
+    }));
+
+    $('#fmShop').onsubmit = async e => {
+      e.preventDefault();
+      const nombre = $('#shNombre').value.trim();
+      $('#shNombre').closest('.campo').classList.toggle('error', !nombre);
+      if (!nombre) { $('#shNombre').focus(); return; }
+      try {
+        const nomTost = $('#shTostador').value.trim();
+        const roaster_id = nomTost ? await DB.asegurarTostador(nomTost) : null;
+        const previo = k => (s && s[k] !== undefined ? s[k] : null);
+        const datos = {
+          nombre, tipo: $('#shTipo').value, estado_personal: $('#shEstado').value,
+          ciudad: $('#shCiudad').value.trim() || null,
+          comuna: $('#shComuna').value.trim() || null,
+          direccion: $('#shDireccion').value.trim() || null,
+          instagram: $('#shInsta').value.trim() || null,
+          horario: $('#shHorario').value.trim() || null,
+          rango_precio: DB.num($('#shPrecio').value),
+          roaster_id,
+          como_la_conoci: $('#shComo').value.trim() || null,
+          notas: $('#shNotas').value.trim() || null
+        };
+        ['wifi', 'enchufes', 'para_trabajar', 'terraza', 'pet_friendly', 'vende_grano', 'tuesta_propio']
+          .forEach(k => { datos[k] = k in bools ? bools[k] : previo(k); });
+        if (s) await DB.editarCafeteria(s.id, datos); else await DB.nuevaCafeteria(datos);
+        toast(s ? 'Guardada.' : 'Cafetería agregada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
+  }
+
+  const NOTAS_ETIQUETA = [
+    ['pt_cafe', 'El café'], ['pt_atencion', 'La atención'], ['pt_espacio', 'El espacio'],
+    ['pt_precio_valor', 'Precio por lo que dan'], ['pt_limpieza', 'Limpieza']
+  ];
+
+  function formVisita(shopId, visitaId) {
+    const v = visitaId ? DB.porId(DB.estado.visitas, visitaId) : null;
+    const shop = DB.cafeteria(v ? v.coffee_shop_id : shopId);
+    if (!shop) return;
+    const cata = v ? DB.cataDeVisita(v.id) : null;
+    const metodos = DB.estado.metodos.filter(m => m.activo);
+
+    abrirModal(v ? `Visita a ${shop.nombre}` : `Visita a ${shop.nombre}`, `
+      <form id="fmVisita" novalidate>
+        <div class="grid2">
+          <div class="campo"><label for="viFecha">Cuándo</label>
+            <input id="viFecha" type="date" value="${v ? v.fecha : DB.hoy()}" max="${DB.hoy()}"></div>
+          <div class="campo"><label for="viMotivo">A qué fuiste</label>
+            <select id="viMotivo"><option value="">No anotar</option>
+              ${Object.entries(MOTIVO_VISITA).map(([k, l]) =>
+                `<option value="${k}" ${v && v.motivo === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="campo"><label for="viPedi">Qué pediste</label>
+          <input id="viPedi" value="${esc(v ? v.que_pedi : '')}" placeholder="V60 de Etiopía, capuchino, filtrado del día…"></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="viMetodo">Método</label>
+            <select id="viMetodo"><option value="">No sé</option>
+              ${metodos.map(m => `<option value="${m.id}" ${v && v.method_id === m.id ? 'selected' : ''}>${esc(m.nombre)}</option>`).join('')}</select></div>
+          <div class="campo"><label for="viPrecio">Cuánto pagaste</label>
+            <input id="viPrecio" type="number" inputmode="numeric" step="100" min="0" value="${v && v.precio ? Math.round(v.precio) : ''}"></div>
+        </div>
+
+        <div class="grid2">
+          <div class="campo"><label for="viOrigen">Origen, si lo decía</label>
+            <input id="viOrigen" value="${esc(v ? v.origen_declarado : '')}" placeholder="Etiopía Guji"></div>
+          <div class="campo"><label for="viTostador">Tostador, si lo decía</label>
+            <input id="viTostador" value="${esc(v ? v.tostador_declarado : '')}"></div>
+        </div>
+
+        <fieldset><legend>Qué tal estuvo (1 a 5)</legend>
+          ${NOTAS_ETIQUETA.map(([k, l]) => `
+            <div class="campo"><label id="lbv-${k}">${l}</label>
+              <div class="escala" role="group" aria-labelledby="lbv-${k}" data-visita-nota="${k}">
+                ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-v="${n}" aria-pressed="${v && DB.num(v[k]) === n}">${n}</button>`).join('')}
+              </div></div>`).join('')}
+          <div class="pista">Por ahora las cinco pesan igual. Poder elegir cuánto pesa cada una es el paso siguiente del plan.</div>
+        </fieldset>
+
+        <div class="grid2">
+          <div class="campo"><label for="viConQuien">Con quién</label>
+            <input id="viConQuien" value="${esc(v ? v.con_quien : '')}"></div>
+          <div class="campo"><label for="viEspera">Espera (min)</label>
+            <input id="viEspera" type="number" inputmode="numeric" step="1" min="0" value="${v && v.espera_min !== null ? v.espera_min : ''}"></div>
+        </div>
+
+        <div class="campo"><label id="lbVolveria">¿Volverías?</label>
+          <div class="si-no" role="group" aria-labelledby="lbVolveria" id="viVolveria">
+            <button type="button" data-v="1" aria-pressed="${v && v.volveria === true}">Sí</button>
+            <button type="button" data-v="0" aria-pressed="${v && v.volveria === false}">No</button>
+          </div></div>
+
+        <div class="campo"><label for="viNotas">Notas</label>
+          <textarea id="viNotas" placeholder="Cómo estaba el café, el lugar, la atención…">${esc(v ? v.notas : '')}</textarea></div>
+
+        ${cata ? `<div class="nota nota-info">Esta visita ya tiene una cata asociada
+          (${cata.puntuacion_personal !== null ? cata.puntuacion_personal + '/10' : 'sin puntuación'}).</div>` : ''}
+
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">${v ? 'Guardar' : 'Registrar visita'}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    const notas = {};
+    NOTAS_ETIQUETA.forEach(([k]) => { if (v && DB.num(v[k]) !== null) notas[k] = DB.num(v[k]); });
+    $$('[data-visita-nota]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      notas[g.dataset.visitaNota] = DB.num(b.dataset.v);
+    }));
+    let volveria = v ? v.volveria : null;
+    $$('#viVolveria button').forEach(b => b.onclick = () => {
+      $$('#viVolveria button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      volveria = b.dataset.v === '1';
+    });
+
+    $('#fmVisita').onsubmit = async e => {
+      e.preventDefault();
+      try {
+        const datos = {
+          coffee_shop_id: shop.id,
+          fecha: $('#viFecha').value || DB.hoy(),
+          que_pedi: $('#viPedi').value.trim() || null,
+          method_id: $('#viMetodo').value || null,
+          precio: DB.num($('#viPrecio').value),
+          origen_declarado: $('#viOrigen').value.trim() || null,
+          tostador_declarado: $('#viTostador').value.trim() || null,
+          con_quien: $('#viConQuien').value.trim() || null,
+          motivo: $('#viMotivo').value || null,
+          espera_min: DB.num($('#viEspera').value),
+          volveria,
+          notas: $('#viNotas').value.trim() || null,
+          ...notas
+        };
+        if (v) await DB.editarVisita(v.id, datos);
+        else {
+          await DB.nuevaVisita(datos);
+          /* La primera visita cambia sola el estado: si decía "quiero ir", ya fue */
+          if (shop.estado_personal === 'quiero_ir') {
+            await DB.editarCafeteria(shop.id, { estado_personal: 'visitada' });
+          }
+        }
+        toast(v ? 'Visita guardada.' : 'Visita registrada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
   }
 
   /* ============================================================
@@ -2767,7 +3136,8 @@ const APP = (() => {
   return {
     irA, cerrarModal, formCafe, formLote, formMovimiento, detalleCafe,
     prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta,
-    verVersiones, usarVersion, formComparar, formDeseo, formTostador, bitacoraTab,
+    verVersiones, usarVersion, formComparar, formDeseo, formTostador,
+    formCafeteria, formVisita, bitacoraTab,
     borrarCafe, borrarPreparacion: borrarPrep, forzarSync, descartarFallida, salir, abrirPerfil, toast
   };
 })();

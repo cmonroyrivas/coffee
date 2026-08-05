@@ -323,7 +323,7 @@ const DB = (() => {
     cafes: [], lotes: [], movimientos: [], recetas: [], versiones: [], pasos: [],
     preparaciones: [], catas: [], molinillos: [], metodos: [], procesos: [],
     tostadores: [], descriptores: [], catDescriptores: [], descriptoresCata: [],
-    deseos: [], perfil: null,
+    deseos: [], cafeterias: [], visitas: [], perfil: null,
     cargado: false, desdeCache: false
   };
 
@@ -338,7 +338,8 @@ const DB = (() => {
           molinillos: estado.molinillos, metodos: estado.metodos, procesos: estado.procesos,
           tostadores: estado.tostadores, descriptores: estado.descriptores,
           catDescriptores: estado.catDescriptores, descriptoresCata: estado.descriptoresCata,
-          deseos: estado.deseos, perfil: estado.perfil
+          deseos: estado.deseos, cafeterias: estado.cafeterias, visitas: estado.visitas,
+          perfil: estado.perfil
         }
       }));
     } catch (e) { registrarError('cache/guardar', e); }
@@ -379,7 +380,9 @@ const DB = (() => {
       ['catDescriptores', 'flavor_categories', '*', 'orden'],
       ['descriptores', 'flavor_descriptors', '*', 'nombre'],
       ['descriptoresCata', 'review_descriptors', '*', null],
-      ['deseos', 'wishlist', '*', 'created_at']
+      ['deseos', 'wishlist', '*', 'created_at'],
+      ['cafeterias', 'coffee_shops', '*', 'nombre'],
+      ['visitas', 'cafe_visits', '*', null]
     ];
 
     try {
@@ -395,7 +398,8 @@ const DB = (() => {
       });
 
       // Los soft-deleted no se muestran, pero se dejan en la base.
-      ['cafes', 'lotes', 'recetas', 'preparaciones', 'catas', 'molinillos', 'tostadores', 'deseos']
+      ['cafes', 'lotes', 'recetas', 'preparaciones', 'catas', 'molinillos', 'tostadores', 'deseos',
+       'cafeterias', 'visitas']
         .forEach(k => { estado[k] = estado[k].filter(x => !x.deleted_at); });
 
       const { data: perf } = await sb.from('profiles').select('*').maybeSingle();
@@ -507,6 +511,42 @@ const DB = (() => {
       recompraria: cafes.filter(c => c.recompraria === true).length,
       noRecompraria: cafes.filter(c => c.recompraria === false).length,
       gasto, cafes
+    };
+  }
+
+  /* ---------- cafeterias y visitas (Fase 3) ---------- */
+  function cafeteria(id) { return porId(estado.cafeterias, id); }
+  function visitasDe(shopId) {
+    return estado.visitas.filter(v => v.coffee_shop_id === shopId)
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }
+  function cataDeVisita(visitaId) {
+    return estado.catas.find(c => c.cafe_visit_id === visitaId) || null;
+  }
+
+  /* Las cinco notas de una visita, promediadas. Es un promedio simple a
+     proposito: el ranking ponderado configurable es un paso posterior del plan,
+     y hasta que exista no hay que fingir que los pesos ya se pueden elegir. */
+  const NOTAS_VISITA = ['pt_cafe', 'pt_atencion', 'pt_espacio', 'pt_precio_valor', 'pt_limpieza'];
+  function notaVisita(v) {
+    const vals = NOTAS_VISITA.map(k => num(v[k])).filter(x => x !== null);
+    return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+  }
+
+  function resumenCafeteria(shopId) {
+    const vs = visitasDe(shopId);
+    const notas = vs.map(notaVisita).filter(x => x !== null);
+    const precios = vs.map(v => num(v.precio)).filter(x => x !== null && x > 0);
+    return {
+      nVisitas: vs.length,
+      nConNota: notas.length,
+      nota: notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null,
+      gasto: precios.reduce((a, b) => a + b, 0),
+      precioProm: precios.length ? Math.round(precios.reduce((a, b) => a + b, 0) / precios.length) : null,
+      volveria: vs.filter(v => v.volveria === true).length,
+      noVolveria: vs.filter(v => v.volveria === false).length,
+      ultima: vs[0] || null,
+      visitas: vs
     };
   }
 
@@ -729,6 +769,25 @@ const DB = (() => {
     return escribir({ accion: 'update', tabla: 'roasters', id, datos });
   }
 
+  async function nuevaCafeteria(datos) {
+    return escribir({ accion: 'insert', tabla: 'coffee_shops', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarCafeteria(id, datos) {
+    return escribir({ accion: 'update', tabla: 'coffee_shops', id, datos });
+  }
+  async function borrarCafeteria(id) {
+    return escribir({ accion: 'delete_suave', tabla: 'coffee_shops', id });
+  }
+  async function nuevaVisita(datos) {
+    return escribir({ accion: 'insert', tabla: 'cafe_visits', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarVisita(id, datos) {
+    return escribir({ accion: 'update', tabla: 'cafe_visits', id, datos });
+  }
+  async function borrarVisita(id) {
+    return escribir({ accion: 'delete_suave', tabla: 'cafe_visits', id });
+  }
+
   async function guardarPerfil(datos) {
     if (estado.perfil) return escribir({ accion: 'update', tabla: 'profiles', id: usuario.id, datos });
     return escribir({ accion: 'insert', tabla: 'profiles', datos: { ...datos, user_id: usuario.id } });
@@ -847,12 +906,15 @@ const DB = (() => {
     valoracionPromedio, metodoMasUsado, mejorCafe, ultimaPreparacion, recetaFavorita,
     descriptor, categoriaSabor, descriptoresDeCata, descriptoresDeCafe,
     cafesDeTostador, resumenTostador,
+    cafeteria, visitasDe, cataDeVisita, notaVisita, resumenCafeteria, NOTAS_VISITA,
     // escritura
     nuevoCafe, editarCafe, borrarCafe, nuevoLote, editarLote, nuevoMovimiento,
     nuevaReceta, editarReceta, nuevaVersion, nuevosPasos,
     nuevaPreparacion, editarPreparacion, borrarPreparacion,
     nuevaCata, editarCata, guardarDescriptoresCata, guardarPerfil, asegurarTostador,
     nuevoDeseo, editarDeseo, borrarDeseo, editarTostador,
+    nuevaCafeteria, editarCafeteria, borrarCafeteria,
+    nuevaVisita, editarVisita, borrarVisita,
     // exportacion
     exportarInventarioCSV, exportarPreparacionesCSV, exportarTodoJSON, descargar
   };
