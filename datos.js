@@ -323,7 +323,8 @@ const DB = (() => {
     cafes: [], lotes: [], movimientos: [], recetas: [], versiones: [], pasos: [],
     preparaciones: [], catas: [], molinillos: [], metodos: [], procesos: [],
     tostadores: [], descriptores: [], catDescriptores: [], descriptoresCata: [],
-    deseos: [], cafeterias: [], visitas: [], perfil: null,
+    deseos: [], cafeterias: [], visitas: [],
+    rutas: [], paradas: [], ideas: [], perfil: null,
     cargado: false, desdeCache: false
   };
 
@@ -339,6 +340,7 @@ const DB = (() => {
           tostadores: estado.tostadores, descriptores: estado.descriptores,
           catDescriptores: estado.catDescriptores, descriptoresCata: estado.descriptoresCata,
           deseos: estado.deseos, cafeterias: estado.cafeterias, visitas: estado.visitas,
+          rutas: estado.rutas, paradas: estado.paradas, ideas: estado.ideas,
           perfil: estado.perfil
         }
       }));
@@ -382,7 +384,10 @@ const DB = (() => {
       ['descriptoresCata', 'review_descriptors', '*', null],
       ['deseos', 'wishlist', '*', 'created_at'],
       ['cafeterias', 'coffee_shops', '*', 'nombre'],
-      ['visitas', 'cafe_visits', '*', null]
+      ['visitas', 'cafe_visits', '*', null],
+      ['rutas', 'routes', '*', 'created_at'],
+      ['paradas', 'route_stops', '*', 'orden'],
+      ['ideas', 'content_ideas', '*', 'created_at']
     ];
 
     try {
@@ -399,7 +404,7 @@ const DB = (() => {
 
       // Los soft-deleted no se muestran, pero se dejan en la base.
       ['cafes', 'lotes', 'recetas', 'preparaciones', 'catas', 'molinillos', 'tostadores', 'deseos',
-       'cafeterias', 'visitas']
+       'cafeterias', 'visitas', 'rutas', 'ideas']
         .forEach(k => { estado[k] = estado[k].filter(x => !x.deleted_at); });
 
       const { data: perf } = await sb.from('profiles').select('*').maybeSingle();
@@ -524,18 +529,55 @@ const DB = (() => {
     return estado.catas.find(c => c.cafe_visit_id === visitaId) || null;
   }
 
-  /* Las cinco notas de una visita, promediadas. Es un promedio simple a
-     proposito: el ranking ponderado configurable es un paso posterior del plan,
-     y hasta que exista no hay que fingir que los pesos ya se pueden elegir. */
+  /* Las cinco notas de una visita, ponderadas segun los pesos del perfil.
+     Los pesos por defecto son todos 1, que da exactamente el promedio simple.
+     Solo se ponderan las notas que ESTAN puestas: si no evaluaste el espacio,
+     su peso no arrastra el resultado hacia abajo. */
   const NOTAS_VISITA = ['pt_cafe', 'pt_atencion', 'pt_espacio', 'pt_precio_valor', 'pt_limpieza'];
-  function notaVisita(v) {
-    const vals = NOTAS_VISITA.map(k => num(v[k])).filter(x => x !== null);
-    return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+  const PESOS_POR_DEFECTO = { cafe: 1, atencion: 1, espacio: 1, precio_valor: 1, limpieza: 1 };
+
+  function pesosCafeteria() {
+    const p = (estado.perfil && estado.perfil.pesos_cafeteria) || null;
+    const out = { ...PESOS_POR_DEFECTO };
+    if (p && typeof p === 'object') {
+      Object.keys(PESOS_POR_DEFECTO).forEach(k => {
+        const v = num(p[k]);
+        if (v !== null && v >= 0) out[k] = v;
+      });
+    }
+    return out;
+  }
+
+  function notaVisita(v, pesos) {
+    const w = pesos || pesosCafeteria();
+    let suma = 0, pesoTotal = 0;
+    NOTAS_VISITA.forEach(k => {
+      const val = num(v[k]);
+      if (val === null) return;                 // no evaluada: no participa
+      const peso = num(w[k.replace('pt_', '')], 1);
+      if (peso <= 0) return;                    // peso cero: la excluiste a proposito
+      suma += val * peso;
+      pesoTotal += peso;
+    });
+    return pesoTotal > 0 ? Math.round((suma / pesoTotal) * 10) / 10 : null;
+  }
+
+  /* ¿Los pesos estan todos iguales? Sirve para que la interfaz pueda decir si
+     el orden que se ve es un promedio simple o uno ponderado por ella. */
+  function pesosSonIguales() {
+    const w = pesosCafeteria();
+    const vals = Object.keys(PESOS_POR_DEFECTO).map(k => w[k]);
+    return vals.every(v => v === vals[0]);
   }
 
   function resumenCafeteria(shopId) {
     const vs = visitasDe(shopId);
-    const notas = vs.map(notaVisita).filter(x => x !== null);
+    /* OJO: NO usar vs.map(notaVisita). map() pasa (elemento, indice, array), y
+       ese indice caia en el parametro `pesos`: la primera visita se calculaba con
+       los pesos reales (indice 0, falsy) y las demas con pesos falsos (indice 1 =
+       truthy, sin las claves), asi que el ranking mezclaba dos criterios. */
+    const pesos = pesosCafeteria();
+    const notas = vs.map(v => notaVisita(v, pesos)).filter(x => x !== null);
     const precios = vs.map(v => num(v.precio)).filter(x => x !== null && x > 0);
     return {
       nVisitas: vs.length,
@@ -548,6 +590,33 @@ const DB = (() => {
       ultima: vs[0] || null,
       visitas: vs
     };
+  }
+
+  /* ---------- rutas ---------- */
+  function ruta(id) { return porId(estado.rutas, id); }
+  function paradasDe(rutaId) {
+    return estado.paradas.filter(p => p.route_id === rutaId)
+      .sort((a, b) => num(a.orden, 1) - num(b.orden, 1));
+  }
+  function resumenRuta(rutaId) {
+    const ps = paradasDe(rutaId);
+    const hechas = ps.filter(p => p.cafe_visit_id);
+    return {
+      nParadas: ps.length,
+      nHechas: hechas.length,
+      /* El gasto de una ruta sale de las visitas reales, no de una estimacion */
+      gasto: hechas.reduce((s, p) => {
+        const v = porId(estado.visitas, p.cafe_visit_id);
+        return s + (v ? num(v.precio, 0) : 0);
+      }, 0),
+      paradas: ps
+    };
+  }
+
+  /* ---------- banco de contenido ---------- */
+  function ideasDe(entidad, id) {
+    const campo = { cafeteria: 'coffee_shop_id', visita: 'cafe_visit_id', cafe: 'coffee_id', tostador: 'roaster_id' }[entidad];
+    return campo ? estado.ideas.filter(i => i[campo] === id) : [];
   }
 
   const ESTADOS_ACTIVOS = ['sin_abrir', 'abierto', 'bajo_stock'];
@@ -788,6 +857,37 @@ const DB = (() => {
     return escribir({ accion: 'delete_suave', tabla: 'cafe_visits', id });
   }
 
+  async function nuevaRuta(datos) {
+    return escribir({ accion: 'insert', tabla: 'routes', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarRuta(id, datos) {
+    return escribir({ accion: 'update', tabla: 'routes', id, datos });
+  }
+  async function borrarRuta(id) {
+    return escribir({ accion: 'delete_suave', tabla: 'routes', id });
+  }
+  async function nuevaParada(datos) {
+    return escribir({ accion: 'insert', tabla: 'route_stops', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarParada(id, datos) {
+    return escribir({ accion: 'update', tabla: 'route_stops', id, datos });
+  }
+  /* route_stops no tiene deleted_at: una parada quitada de una ruta no es
+     historia que valga la pena guardar, a diferencia de un movimiento. */
+  async function borrarParada(id) {
+    return escribir({ accion: 'delete', tabla: 'route_stops', match: { id } });
+  }
+
+  async function nuevaIdea(datos) {
+    return escribir({ accion: 'insert', tabla: 'content_ideas', datos: { ...datos, user_id: usuario.id } });
+  }
+  async function editarIdea(id, datos) {
+    return escribir({ accion: 'update', tabla: 'content_ideas', id, datos });
+  }
+  async function borrarIdea(id) {
+    return escribir({ accion: 'delete_suave', tabla: 'content_ideas', id });
+  }
+
   async function guardarPerfil(datos) {
     if (estado.perfil) return escribir({ accion: 'update', tabla: 'profiles', id: usuario.id, datos });
     return escribir({ accion: 'insert', tabla: 'profiles', datos: { ...datos, user_id: usuario.id } });
@@ -907,6 +1007,8 @@ const DB = (() => {
     descriptor, categoriaSabor, descriptoresDeCata, descriptoresDeCafe,
     cafesDeTostador, resumenTostador,
     cafeteria, visitasDe, cataDeVisita, notaVisita, resumenCafeteria, NOTAS_VISITA,
+    pesosCafeteria, pesosSonIguales, PESOS_POR_DEFECTO,
+    ruta, paradasDe, resumenRuta, ideasDe,
     // escritura
     nuevoCafe, editarCafe, borrarCafe, nuevoLote, editarLote, nuevoMovimiento,
     nuevaReceta, editarReceta, nuevaVersion, nuevosPasos,
@@ -915,6 +1017,8 @@ const DB = (() => {
     nuevoDeseo, editarDeseo, borrarDeseo, editarTostador,
     nuevaCafeteria, editarCafeteria, borrarCafeteria,
     nuevaVisita, editarVisita, borrarVisita,
+    nuevaRuta, editarRuta, borrarRuta, nuevaParada, editarParada, borrarParada,
+    nuevaIdea, editarIdea, borrarIdea,
     // exportacion
     exportarInventarioCSV, exportarPreparacionesCSV, exportarTodoJSON, descargar
   };

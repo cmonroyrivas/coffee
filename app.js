@@ -2457,7 +2457,34 @@ const APP = (() => {
   /* ============================================================
      VISTA 5 · RUTA (Fase 3 — honesta sobre lo que todavía no hay)
      ============================================================ */
+  let tabRuta = 'cafeterias';
+
   function renderRuta() {
+    const tabs = [
+      ['cafeterias', 'Cafeterías'], ['rutas', 'Rutas'], ['contenido', 'Contenido'],
+      ['viaje', 'Viaje'], ['origenes', 'Orígenes']
+    ];
+    $('#rutaTabs').innerHTML = tabs.map(([k, t]) =>
+      `<button class="subtab" role="tab" aria-selected="${tabRuta === k}" data-rt="${k}">${t}</button>`).join('');
+    $$('#rutaTabs .subtab').forEach(b => b.onclick = () => { tabRuta = b.dataset.rt; renderRuta(); });
+    ajustarSubtabs($('#rutaTabs'));
+
+    if (tabRuta === 'cafeterias') return pintarRutaCafeterias();
+    if (tabRuta === 'rutas') return pintarRutas();
+    if (tabRuta === 'contenido') return pintarContenido();
+    if (tabRuta === 'viaje') return pintarViaje();
+    return pintarOrigenes();
+  }
+
+  function rutaTab(t) { tabRuta = t; renderRuta(); }
+
+  function pintarRutaCafeterias() {
+    $('#rutaContenido').innerHTML = bloqueCafeterias() + bloquePesos();
+    engancharCafeterias();
+    engancharPesos();
+  }
+
+  function pintarOrigenes() {
     const origenes = typeof ORIGINS !== 'undefined' ? ORIGINS : [];
     // B-10: se ignoran los paises vacios, que hacian que TODO calzara
     const misPaises = new Set(DB.estado.cafes.map(c => (c.pais || '').trim().toLowerCase())
@@ -2487,14 +2514,6 @@ const APP = (() => {
     const explorados = origenes.filter(tengo);
 
     $('#rutaContenido').innerHTML = `
-      ${bloqueCafeterias()}
-
-      <div class="nota nota-info">
-        Todavía faltan de esta sección el <b>ranking ponderado configurable</b> (elegir cuánto pesa el café,
-        la atención, el espacio y el precio), las <b>rutas</b>, el <b>banco de contenido</b> y las
-        <b>estadísticas de viaje</b>. Por ahora las notas se promedian todas por igual.
-      </div>
-
       <div class="seccion"><div class="seccion-tit">Tu mapa de orígenes</div>
         <div class="card card-p">
           <p style="font-size:var(--tx-sm);color:var(--t2);margin:0 0 14px">
@@ -2512,7 +2531,540 @@ const APP = (() => {
             </div>`;
           }).join('')}
         </div></div>`;
-    engancharCafeterias();
+  }
+
+  /* ============================================================
+     RUTAS · agrupar cafeterías en un recorrido
+     ============================================================ */
+  const ETIQUETA_RUTA = {
+    idea: 'Idea', planeada: 'Planeada', en_curso: 'En curso', hecha: 'Hecha', archivada: 'Archivada'
+  };
+
+  function pintarRutas() {
+    const rutas = DB.estado.rutas;
+    let h = '';
+
+    if (!DB.estado.cafeterias.length) {
+      h = `<div class="vacio"><div class="vacio-ico" aria-hidden="true">◈</div>
+        <h3>Primero las cafeterías</h3>
+        <p>Una ruta es un recorrido de cafeterías. Agrega al menos una en la pestaña Cafeterías
+           y después vuelve acá a armar el recorrido.</p>
+        <button class="btn btn-pri" onclick="APP.rutaTab('cafeterias')">Ir a Cafeterías</button></div>`;
+      $('#rutaContenido').innerHTML = h;
+      return;
+    }
+
+    if (!rutas.length) {
+      h += `<div class="vacio"><div class="vacio-ico" aria-hidden="true">▷</div>
+        <h3>Sin rutas todavía</h3>
+        <p>Arma un recorrido con las cafeterías que quieres visitar en un día o en un viaje.
+           Cada parada queda enlazada con la visita real cuando la registres.</p></div>`;
+    } else {
+      h += rutas.map(r => {
+        const res = DB.resumenRuta(r.id);
+        const pct = res.nParadas ? Math.round((res.nHechas / res.nParadas) * 100) : 0;
+        return `<div class="card card-p" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+            <b style="font-family:var(--f-display);font-size:var(--tx-md)">${esc(r.nombre)}</b>
+            <span class="chip ${r.estado === 'hecha' ? 'ok' : r.estado === 'en_curso' ? 'warn' : ''}">${esc(ETIQUETA_RUTA[r.estado] || r.estado)}</span>
+          </div>
+          <div style="font-size:var(--tx-xs);color:var(--t3);margin-top:3px">
+            ${[r.ciudad, r.fecha_planeada ? 'para el ' + DB.fecha(r.fecha_planeada) : null].filter(Boolean).map(esc).join(' · ')}
+          </div>
+          ${r.descripcion ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:8px 0 0">${esc(r.descripcion)}</p>` : ''}
+          <div class="cafe-meta" style="margin-top:8px">
+            <span><b>${res.nHechas}</b> de ${res.nParadas} hechas</span>
+            ${res.gasto ? `<span>${DB.clp(res.gasto)} gastado</span>` : ''}
+          </div>
+          ${res.nParadas ? `<div class="barra" style="margin-top:8px"><div class="barra-in ${pct === 100 ? '' : 'medio'}" style="width:${pct}%"></div></div>` : ''}
+          <div style="margin-top:12px">
+            ${res.paradas.map((p, i) => {
+              const s = DB.cafeteria(p.coffee_shop_id);
+              const v = p.cafe_visit_id ? DB.porId(DB.estado.visitas, p.cafe_visit_id) : null;
+              return `<div class="paso ${v ? 'hecho' : ''}" style="margin-bottom:6px">
+                <span class="paso-n">${String(i + 1).padStart(2, '0')}</span>
+                <span class="paso-txt">
+                  <div><b>${esc(s ? s.nombre : 'Cafetería eliminada')}</b></div>
+                  ${s && s.comuna ? `<div class="paso-tiempo">${esc(s.comuna)}</div>` : ''}
+                  ${p.nota ? `<div class="paso-tiempo">${esc(p.nota)}</div>` : ''}
+                  ${v ? `<div class="paso-tiempo">Visitada el ${DB.fecha(v.fecha)}${v.precio ? ' · ' + DB.clp(v.precio) : ''}</div>`
+                      : `<div style="margin-top:6px"><button class="btn btn-fant" data-parada-visitar="${esc(p.id)}">Registrar la visita</button></div>`}
+                </span>
+                <button class="btn btn-fant" data-parada-quitar="${esc(p.id)}" aria-label="Quitar parada">✕</button>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="btn-fila" style="margin-top:10px">
+            <button class="btn" data-ruta-parada="${esc(r.id)}">＋ Agregar parada</button>
+            <button class="btn btn-fant" data-ruta-editar="${esc(r.id)}">Editar</button>
+            <button class="btn btn-fant" data-ruta-borrar="${esc(r.id)}">Eliminar</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    h += `<button class="btn btn-pri btn-bloque" id="btnNuevaRuta" style="margin-top:8px">＋ Armar una ruta</button>`;
+    $('#rutaContenido').innerHTML = h;
+
+    if ($('#btnNuevaRuta')) $('#btnNuevaRuta').onclick = () => formRuta();
+    $$('[data-ruta-editar]').forEach(b => b.onclick = () => formRuta(b.dataset.rutaEditar));
+    $$('[data-ruta-parada]').forEach(b => b.onclick = () => formParada(b.dataset.rutaParada));
+    $$('[data-parada-visitar]').forEach(b => b.onclick = () => {
+      const p = DB.porId(DB.estado.paradas, b.dataset.paradaVisitar);
+      if (p) formVisita(p.coffee_shop_id, null, p.id);
+    });
+    $$('[data-ruta-borrar]').forEach(b => b.onclick = async () => {
+      const r = DB.ruta(b.dataset.rutaBorrar);
+      if (!r) return;
+      if (!await confirmar('Eliminar ruta', `Se elimina "${r.nombre}" y sus paradas. Las visitas que registraste se mantienen.`, 'Sí, eliminar', true)) return;
+      try { await DB.borrarRuta(r.id); toast('Ruta eliminada.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+    $$('[data-parada-quitar]').forEach(b => b.onclick = async () => {
+      try { await DB.borrarParada(b.dataset.paradaQuitar); toast('Parada quitada.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+  }
+
+  function formRuta(id) {
+    const r = id ? DB.ruta(id) : null;
+    abrirModal(r ? r.nombre : 'Armar una ruta', `
+      <form id="fmRuta" novalidate>
+        <div class="campo"><label for="ruNombre">Cómo se llama *</label>
+          <input id="ruNombre" value="${esc(r ? r.nombre : '')}" placeholder="Sábado en el centro, Viaje a Valpo…">
+          <div class="msg-error">Ponle un nombre a la ruta.</div></div>
+        <div class="grid2">
+          <div class="campo"><label for="ruCiudad">Ciudad</label>
+            <input id="ruCiudad" value="${esc(r ? r.ciudad : (DB.estado.perfil && DB.estado.perfil.ciudad) || '')}"></div>
+          <div class="campo"><label for="ruFecha">Para cuándo</label>
+            <input id="ruFecha" type="date" value="${r && r.fecha_planeada ? r.fecha_planeada : ''}"></div>
+        </div>
+        <div class="campo"><label for="ruEstado">Estado</label>
+          <select id="ruEstado">${Object.entries(ETIQUETA_RUTA).map(([k, l]) =>
+            `<option value="${k}" ${(r ? r.estado : 'idea') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        <div class="campo"><label for="ruDesc">De qué se trata</label>
+          <textarea id="ruDesc" placeholder="Qué quieres lograr con este recorrido">${esc(r ? r.descripcion : '')}</textarea></div>
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">${r ? 'Guardar' : 'Crear ruta'}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    $('#fmRuta').onsubmit = async e => {
+      e.preventDefault();
+      const nombre = $('#ruNombre').value.trim();
+      $('#ruNombre').closest('.campo').classList.toggle('error', !nombre);
+      if (!nombre) { $('#ruNombre').focus(); return; }
+      try {
+        const datos = {
+          nombre, ciudad: $('#ruCiudad').value.trim() || null,
+          fecha_planeada: $('#ruFecha').value || null,
+          estado: $('#ruEstado').value,
+          descripcion: $('#ruDesc').value.trim() || null
+        };
+        if (r) await DB.editarRuta(r.id, datos); else await DB.nuevaRuta(datos);
+        toast(r ? 'Guardada.' : 'Ruta creada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
+  }
+
+  function formParada(rutaId) {
+    const r = DB.ruta(rutaId);
+    if (!r) return;
+    const yaEstan = new Set(DB.paradasDe(rutaId).map(p => p.coffee_shop_id));
+    const disponibles = DB.estado.cafeterias.filter(s => !yaEstan.has(s.id));
+
+    if (!disponibles.length) {
+      toast('Todas tus cafeterías ya están en esta ruta.', 'error');
+      return;
+    }
+
+    abrirModal(`Agregar parada a ${r.nombre}`, `
+      <form id="fmParada" novalidate>
+        <div class="campo"><label for="paShop">Cafetería</label>
+          <select id="paShop">${disponibles.map(s =>
+            `<option value="${s.id}">${esc(s.nombre)}${s.comuna ? ' · ' + esc(s.comuna) : ''}</option>`).join('')}</select>
+          <div class="pista">Solo aparecen las que no están todavía en la ruta.</div></div>
+        <div class="campo"><label for="paNota">Nota para esta parada</label>
+          <input id="paNota" placeholder="Pedir el filtrado del día; llegar antes de las 11"></div>
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">Agregar</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    $('#fmParada').onsubmit = async e => {
+      e.preventDefault();
+      try {
+        const orden = DB.paradasDe(rutaId).reduce((m, p) => Math.max(m, DB.num(p.orden, 1)), 0) + 1;
+        await DB.nuevaParada({
+          route_id: rutaId, coffee_shop_id: $('#paShop').value, orden,
+          nota: $('#paNota').value.trim() || null
+        });
+        toast('Parada agregada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
+  }
+
+  /* ============================================================
+     BANCO DE CONTENIDO
+     ============================================================ */
+  const TIPO_IDEA = {
+    foto: 'Foto', carrusel: 'Carrusel', reel: 'Reel', historia: 'Historia', video: 'Video', nota: 'Nota'
+  };
+  const ESTADO_IDEA = {
+    idea: 'Idea', borrador: 'Borrador', listo: 'Listo para publicar', publicado: 'Publicado', descartado: 'Descartado'
+  };
+
+  /* Sugerencias: visitas bien evaluadas que todavía no tienen contenido.
+     No inventa el texto, solo señala de qué hay material. */
+  function sugerenciasContenido() {
+    const conIdea = new Set(DB.estado.ideas.map(i => i.cafe_visit_id).filter(Boolean));
+    return DB.estado.visitas
+      .filter(v => !conIdea.has(v.id))
+      .map(v => ({ v, nota: DB.notaVisita(v) }))
+      .filter(x => x.nota !== null && x.nota >= 4)
+      .sort((a, b) => b.nota - a.nota)
+      .slice(0, 3);
+  }
+
+  function pintarContenido() {
+    const ideas = DB.estado.ideas;
+    const abiertas = ideas.filter(i => !['publicado', 'descartado'].includes(i.estado));
+    const cerradas = ideas.filter(i => ['publicado', 'descartado'].includes(i.estado));
+    const sug = sugerenciasContenido();
+
+    let h = '';
+
+    if (sug.length) {
+      h += `<div class="seccion"><div class="seccion-tit">Tienes material sin usar</div>
+        ${sug.map(({ v, nota }) => {
+          const s = DB.cafeteria(v.coffee_shop_id);
+          return `<div class="card card-p" style="margin-bottom:10px">
+            <div style="font-size:var(--tx-sm)"><b>${esc(v.que_pedi || 'Una visita')}</b> en ${esc(s ? s.nombre : '—')}
+              · ${DB.fecha(v.fecha)} · le pusiste ${nota}/5</div>
+            <div style="margin-top:8px"><button class="btn btn-fant" data-idea-desde="${esc(v.id)}">Convertir en idea</button></div>
+          </div>`;
+        }).join('')}
+        <div class="pista">Son visitas que evaluaste con 4 o más y que no tienen contenido asociado. La app no escribe el texto por ti.</div>
+      </div>`;
+    }
+
+    h += `<div class="seccion"><div class="seccion-tit">Ideas abiertas (${abiertas.length})</div>
+      ${!abiertas.length
+        ? `<div class="nota">Sin ideas abiertas. Anota una cuando se te ocurra algo que quieras publicar.</div>`
+        : abiertas.map(i => tarjetaIdea(i)).join('')}
+      <button class="btn btn-pri btn-bloque" id="btnNuevaIdea" style="margin-top:8px">＋ Anotar una idea</button>
+    </div>`;
+
+    if (cerradas.length) {
+      h += `<details class="avanzado"><summary>Publicadas y descartadas (${cerradas.length})</summary>
+        ${cerradas.map(i => tarjetaIdea(i)).join('')}</details>`;
+    }
+
+    $('#rutaContenido').innerHTML = h;
+
+    if ($('#btnNuevaIdea')) $('#btnNuevaIdea').onclick = () => formIdea();
+    $$('[data-idea-editar]').forEach(b => b.onclick = () => formIdea(b.dataset.ideaEditar));
+    $$('[data-idea-desde]').forEach(b => b.onclick = () => formIdea(null, b.dataset.ideaDesde));
+    $$('[data-idea-borrar]').forEach(b => b.onclick = async () => {
+      if (!await confirmar('Quitar idea', 'Se quita del banco de contenido.', 'Sí, quitarla', true)) return;
+      try { await DB.borrarIdea(b.dataset.ideaBorrar); toast('Quitada.'); await recargar(); }
+      catch (e) { toast(mensajeError(e), 'error'); }
+    });
+  }
+
+  function tarjetaIdea(i) {
+    const s = i.coffee_shop_id ? DB.cafeteria(i.coffee_shop_id) : null;
+    const v = i.cafe_visit_id ? DB.porId(DB.estado.visitas, i.cafe_visit_id) : null;
+    const c = i.coffee_id ? DB.cafe(i.coffee_id) : null;
+    const de = [s ? s.nombre : null, c ? c.nombre : null, v ? 'visita del ' + DB.fecha(v.fecha) : null].filter(Boolean);
+    return `<div class="card card-p" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+        <b style="font-family:var(--f-display);font-size:var(--tx-md)">${esc(i.titulo)}</b>
+        <span class="chip ${i.estado === 'listo' ? 'ok' : i.estado === 'publicado' ? '' : i.estado === 'descartado' ? 'bad' : 'warn'}">${esc(ESTADO_IDEA[i.estado] || i.estado)}</span>
+      </div>
+      <div style="font-size:var(--tx-xs);color:var(--t3);margin-top:3px">
+        ${esc(TIPO_IDEA[i.tipo] || i.tipo)}${de.length ? ' · sobre ' + de.map(esc).join(', ') : ''}
+        ${i.fecha_objetivo ? ' · para el ' + DB.fecha(i.fecha_objetivo) : ''}
+        ${i.publicado_en ? ' · publicado el ' + DB.fecha(i.publicado_en) : ''}
+      </div>
+      ${i.texto ? `<p style="font-size:var(--tx-sm);color:var(--t2);margin:8px 0 0;white-space:pre-wrap">${esc(i.texto)}</p>` : ''}
+      ${(i.hashtags || []).length ? `<div style="margin-top:8px">${i.hashtags.map(t => `<span class="chip">${esc(t)}</span> `).join('')}</div>` : ''}
+      <div class="btn-fila" style="margin-top:10px">
+        <button class="btn btn-fant" data-idea-editar="${esc(i.id)}">Editar</button>
+        <button class="btn btn-fant" data-idea-borrar="${esc(i.id)}">Quitar</button>
+      </div>
+    </div>`;
+  }
+
+  function formIdea(id, desdeVisitaId) {
+    const i = id ? DB.porId(DB.estado.ideas, id) : null;
+    const visitaBase = desdeVisitaId ? DB.porId(DB.estado.visitas, desdeVisitaId) : null;
+    const shopBase = visitaBase ? DB.cafeteria(visitaBase.coffee_shop_id) : null;
+
+    abrirModal(i ? 'Editar idea' : 'Anotar una idea', `
+      <form id="fmIdea" novalidate>
+        <div class="campo"><label for="idTitulo">De qué se trata *</label>
+          <input id="idTitulo" value="${esc(i ? i.titulo : (visitaBase ? `${visitaBase.que_pedi || 'Visita'} en ${shopBase ? shopBase.nombre : ''}` : ''))}">
+          <div class="msg-error">Ponle un título para reconocerla.</div></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="idTipo">Formato</label>
+            <select id="idTipo">${Object.entries(TIPO_IDEA).map(([k, l]) =>
+              `<option value="${k}" ${(i ? i.tipo : 'foto') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+          <div class="campo"><label for="idEstado">Estado</label>
+            <select id="idEstado">${Object.entries(ESTADO_IDEA).map(([k, l]) =>
+              `<option value="${k}" ${(i ? i.estado : 'idea') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="grid2">
+          <div class="campo"><label for="idShop">Sobre qué cafetería</label>
+            <select id="idShop"><option value="">Ninguna</option>
+              ${DB.estado.cafeterias.map(s => {
+                const sel = i ? i.coffee_shop_id === s.id : (shopBase && shopBase.id === s.id);
+                return `<option value="${s.id}" ${sel ? 'selected' : ''}>${esc(s.nombre)}</option>`;
+              }).join('')}</select></div>
+          <div class="campo"><label for="idCafe">Sobre qué café</label>
+            <select id="idCafe"><option value="">Ninguno</option>
+              ${DB.estado.cafes.map(c => `<option value="${c.id}" ${i && i.coffee_id === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="campo"><label for="idTexto">El texto</label>
+          <textarea id="idTexto" rows="5" placeholder="Escribe acá el borrador de la publicación">${esc(i ? i.texto : '')}</textarea></div>
+
+        <div class="campo"><label for="idTags">Hashtags</label>
+          <input id="idTags" value="${esc(i && i.hashtags ? i.hashtags.join(' ') : '')}" placeholder="#cafedeespecialidad #concepcion">
+          <div class="pista">Separados por espacio.</div></div>
+
+        <div class="grid2">
+          <div class="campo"><label for="idObjetivo">Para cuándo</label>
+            <input id="idObjetivo" type="date" value="${i && i.fecha_objetivo ? i.fecha_objetivo : ''}"></div>
+          <div class="campo" id="campoPublicado" style="display:${i && i.estado === 'publicado' ? '' : 'none'}">
+            <label for="idPublicado">Publicado el</label>
+            <input id="idPublicado" type="date" value="${i && i.publicado_en ? i.publicado_en : DB.hoy()}">
+            <div class="msg-error">Si está publicado, dinos cuándo.</div></div>
+        </div>
+
+        <div class="btn-fila">
+          <button type="submit" class="btn btn-pri" style="flex:1">${i ? 'Guardar' : 'Anotar'}</button>
+          <button type="button" class="btn" onclick="APP.cerrarModal()">Cancelar</button>
+        </div>
+      </form>`);
+
+    /* La fecha de publicación solo se pide cuando de verdad hace falta */
+    $('#idEstado').onchange = () => {
+      $('#campoPublicado').style.display = $('#idEstado').value === 'publicado' ? '' : 'none';
+    };
+
+    $('#fmIdea').onsubmit = async e => {
+      e.preventDefault();
+      const titulo = $('#idTitulo').value.trim();
+      $('#idTitulo').closest('.campo').classList.toggle('error', !titulo);
+      if (!titulo) { $('#idTitulo').focus(); return; }
+      const estado = $('#idEstado').value;
+      const publicado = estado === 'publicado' ? ($('#idPublicado').value || DB.hoy()) : null;
+      try {
+        const datos = {
+          titulo, tipo: $('#idTipo').value, estado,
+          texto: $('#idTexto').value.trim() || null,
+          hashtags: $('#idTags').value.trim() ? $('#idTags').value.trim().split(/\s+/) : [],
+          coffee_shop_id: $('#idShop').value || null,
+          coffee_id: $('#idCafe').value || null,
+          cafe_visit_id: i ? i.cafe_visit_id : (visitaBase ? visitaBase.id : null),
+          fecha_objetivo: $('#idObjetivo').value || null,
+          publicado_en: publicado
+        };
+        if (i) await DB.editarIdea(i.id, datos); else await DB.nuevaIdea(datos);
+        toast(i ? 'Guardada.' : 'Idea anotada.');
+        cerrarModal();
+        await recargar();
+      } catch (err) { toast(mensajeError(err), 'error'); }
+    };
+  }
+
+  /* ============================================================
+     ESTADÍSTICAS DE VIAJE
+     Todo derivado: no hay tabla nueva. Compara lo que gastas
+     fuera con lo que gastas en grano, que es la cifra que de
+     verdad sorprende.
+     ============================================================ */
+  function pintarViaje() {
+    const visitas = DB.estado.visitas;
+    const shops = DB.estado.cafeterias;
+
+    if (!visitas.length) {
+      $('#rutaContenido').innerHTML = `<div class="vacio"><div class="vacio-ico" aria-hidden="true">◎</div>
+        <h3>Sin visitas registradas</h3>
+        <p>Cuando registres visitas, acá aparecen las ciudades que recorriste, cuánto gastas fuera
+           y cómo se compara con lo que gastas en grano.</p>
+        <button class="btn btn-pri" onclick="APP.rutaTab('cafeterias')">Ir a Cafeterías</button></div>`;
+      return;
+    }
+
+    const gastoFuera = visitas.reduce((s, v) => s + DB.num(v.precio, 0), 0);
+    const gastoGrano = DB.estado.lotes.reduce((s, l) => s + DB.num(l.precio_pagado, 0), 0);
+    const conPrecio = visitas.filter(v => DB.num(v.precio, 0) > 0);
+    const tazaFuera = conPrecio.length ? Math.round(gastoFuera / conPrecio.length) : null;
+    const costoCasa = (() => {
+      const conCosto = DB.estado.lotes.filter(l => DB.num(l.costo_por_gramo) !== null);
+      if (!conCosto.length) return null;
+      const prom = conCosto.reduce((s, l) => s + DB.num(l.costo_por_gramo, 0), 0) / conCosto.length;
+      return Math.round(prom * DB.dosisHabitual());
+    })();
+
+    /* Por ciudad */
+    const porCiudad = {};
+    shops.forEach(s => {
+      const ciudad = (s.ciudad || 'Sin ciudad').trim() || 'Sin ciudad';
+      porCiudad[ciudad] = porCiudad[ciudad] || { nShops: 0, nVisitas: 0, gasto: 0 };
+      porCiudad[ciudad].nShops++;
+      DB.visitasDe(s.id).forEach(v => {
+        porCiudad[ciudad].nVisitas++;
+        porCiudad[ciudad].gasto += DB.num(v.precio, 0);
+      });
+    });
+    const ciudades = Object.entries(porCiudad).sort((a, b) => b[1].nVisitas - a[1].nVisitas);
+
+    /* Por mes */
+    const porMes = {};
+    visitas.forEach(v => {
+      const m = String(v.fecha).slice(0, 7);
+      porMes[m] = porMes[m] || { n: 0, gasto: 0 };
+      porMes[m].n++;
+      porMes[m].gasto += DB.num(v.precio, 0);
+    });
+    const meses = Object.entries(porMes).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6);
+
+    /* Mejor y peor evaluadas, y el método más pedido fuera */
+    const evaluadas = shops.map(s => ({ s, r: DB.resumenCafeteria(s.id) })).filter(x => x.r.nota !== null)
+      .sort((a, b) => b.r.nota - a.r.nota);
+    const metodos = {};
+    visitas.forEach(v => { if (v.method_id) metodos[v.method_id] = (metodos[v.method_id] || 0) + 1; });
+    const metodoTop = Object.entries(metodos).sort((a, b) => b[1] - a[1])[0] || null;
+
+    const nombreMes = m => {
+      const [y, mm] = m.split('-');
+      return new Date(+y, +mm - 1, 1).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+    };
+
+    $('#rutaContenido').innerHTML = `
+      <div class="kpis" style="margin-bottom:20px">
+        <div class="kpi"><div class="kpi-n">${visitas.length}</div><div class="kpi-l">Visitas</div></div>
+        <div class="kpi"><div class="kpi-n">${ciudades.length}</div><div class="kpi-l">Ciudades</div></div>
+        <div class="kpi"><div class="kpi-n">${shops.length}</div><div class="kpi-l">Cafeterías</div></div>
+        <div class="kpi"><div class="kpi-n"><small>${gastoFuera ? DB.clp(gastoFuera) : '—'}</small></div><div class="kpi-l">Gastado fuera</div></div>
+      </div>
+
+      ${tazaFuera !== null ? `<div class="card card-p" style="margin-bottom:20px">
+        <div class="seccion-tit">Fuera contra en casa</div>
+        <div class="datos">
+          <div class="dato"><span class="dato-k">Lo que pagas por una taza fuera</span><span class="dato-v">${DB.clp(tazaFuera)}</span></div>
+          ${costoCasa !== null
+            ? `<div class="dato"><span class="dato-k">Lo que te cuesta una en casa</span><span class="dato-v">${DB.clp(costoCasa)}</span></div>
+               <div class="dato"><span class="dato-k">Diferencia</span><span class="dato-v">${tazaFuera > costoCasa ? DB.clp(tazaFuera - costoCasa) + ' más caro fuera' : DB.clp(costoCasa - tazaFuera) + ' más caro en casa'}</span></div>`
+            : `<div class="dato"><span class="dato-k">Lo que te cuesta una en casa</span><span class="dato-v">Falta registrar precios de tus bolsas</span></div>`}
+          ${gastoGrano ? `<div class="dato"><span class="dato-k">Gasto total en grano</span><span class="dato-v">${DB.clp(gastoGrano)}</span></div>` : ''}
+        </div>
+        <p style="font-size:var(--tx-xs);color:var(--t3);margin:10px 0 0">
+          La taza fuera es el promedio de lo que pagaste; la de casa usa tu dosis habitual de ${DB.dosisHabitual()} g
+          y el costo por gramo de las bolsas con precio. No es lo mismo que una taza fuera trae servicio y una silla.</p>
+      </div>` : ''}
+
+      <div class="seccion"><div class="seccion-tit">Por ciudad</div>
+        <div class="card card-p"><div class="datos">
+          ${ciudades.map(([ciudad, d]) => `<div class="dato">
+            <span class="dato-k">${esc(ciudad)}</span>
+            <span class="dato-v">${d.nShops} cafetería${d.nShops === 1 ? '' : 's'} · ${d.nVisitas} visita${d.nVisitas === 1 ? '' : 's'}${d.gasto ? ' · ' + DB.clp(d.gasto) : ''}</span>
+          </div>`).join('')}
+        </div></div>
+      </div>
+
+      <div class="seccion"><div class="seccion-tit">Por mes</div>
+        <div class="card card-p"><div class="datos">
+          ${meses.map(([m, d]) => `<div class="dato">
+            <span class="dato-k">${esc(nombreMes(m))}</span>
+            <span class="dato-v">${d.n} visita${d.n === 1 ? '' : 's'}${d.gasto ? ' · ' + DB.clp(d.gasto) : ''}</span>
+          </div>`).join('')}
+        </div></div>
+      </div>
+
+      ${evaluadas.length ? `<div class="seccion"><div class="seccion-tit">Tu ranking</div>
+        <div class="card card-p"><div class="datos">
+          ${evaluadas.map(({ s, r }, i) => `<div class="dato">
+            <span class="dato-k">#${i + 1} ${esc(s.nombre)}${s.ciudad ? ' · ' + esc(s.ciudad) : ''}</span>
+            <span class="dato-v">${r.nota}/5 · ${r.nVisitas} visita${r.nVisitas === 1 ? '' : 's'}</span>
+          </div>`).join('')}
+        </div>
+        <p style="font-size:var(--tx-xs);color:var(--t3);margin:10px 0 0">
+          ${DB.pesosSonIguales()
+            ? 'Con las cinco notas pesando igual. Puedes cambiar los pesos en la pestaña Cafeterías.'
+            : 'Ordenado con tus pesos, no con un promedio simple.'}</p>
+        </div>
+      </div>` : ''}
+
+      ${metodoTop ? `<div class="nota">Fuera de casa pides sobre todo
+        <b>${esc(DB.metodo(metodoTop[0]).nombre)}</b> (${metodoTop[1]} de ${visitas.length} visitas con método anotado).</div>` : ''}`;
+  }
+
+  /* ============================================================
+     RANKING PONDERADO CONFIGURABLE
+     Los pesos viven en el perfil. Por defecto todos en 1, que es
+     el promedio simple: activar esto no cambia ningún número
+     hasta que ella mueva algo.
+     ============================================================ */
+  const PESOS_ETIQUETA = [
+    ['cafe', 'El café'], ['atencion', 'La atención'], ['espacio', 'El espacio'],
+    ['precio_valor', 'Precio por lo que dan'], ['limpieza', 'Limpieza']
+  ];
+
+  function bloquePesos() {
+    const w = DB.pesosCafeteria();
+    const iguales = DB.pesosSonIguales();
+    return `<details class="avanzado" id="cajaPesos" style="margin-top:20px">
+      <summary>Cómo se ordenan las cafeterías${iguales ? '' : ' (ponderado por ti)'}</summary>
+      <p style="font-size:var(--tx-sm);color:var(--t2);margin:10px 0">
+        ${iguales
+          ? 'Ahora las cinco notas pesan igual. Si para ti el café importa más que el espacio, súbele el peso y el orden cambia.'
+          : 'Estás ordenando con tus propios pesos, no con un promedio simple.'}
+      </p>
+      ${PESOS_ETIQUETA.map(([k, l]) => `
+        <div class="campo"><label id="lbp-${k}">${l} · peso ${w[k]}</label>
+          <div class="escala" role="group" aria-labelledby="lbp-${k}" data-peso="${k}">
+            ${[0, 1, 2, 3, 4, 5].map(n => `<button type="button" data-v="${n}" aria-pressed="${w[k] === n}">${n}</button>`).join('')}
+          </div></div>`).join('')}
+      <div class="pista">Un peso 0 excluye ese aspecto del cálculo. Una nota que no pusiste nunca arrastra el promedio:
+        solo se ponderan las que evaluaste.</div>
+      <div class="btn-fila" style="margin-top:12px">
+        <button class="btn btn-pri" id="btnGuardarPesos">Guardar pesos</button>
+        <button class="btn btn-fant" id="btnResetPesos">Volver a promedio simple</button>
+      </div>
+    </details>`;
+  }
+
+  function engancharPesos() {
+    if (!$('#cajaPesos')) return;
+    const tmp = { ...DB.pesosCafeteria() };
+    $$('[data-peso]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      tmp[g.dataset.peso] = DB.num(b.dataset.v, 1);
+    }));
+    const guardar = async pesos => {
+      if (Object.values(pesos).every(v => v === 0)) {
+        toast('No pueden ser todos cero: no quedaría nada con que comparar.', 'error'); return;
+      }
+      try {
+        await DB.guardarPerfil({ pesos_cafeteria: pesos });
+        toast('Pesos guardados. El orden se recalculó.');
+        await recargar();
+      } catch (e) { toast(mensajeError(e), 'error'); }
+    };
+    $('#btnGuardarPesos').onclick = () => guardar(tmp);
+    $('#btnResetPesos').onclick = () => guardar({ ...DB.PESOS_POR_DEFECTO });
   }
 
   /* ============================================================
@@ -2766,7 +3318,7 @@ const APP = (() => {
     ['pt_precio_valor', 'Precio por lo que dan'], ['pt_limpieza', 'Limpieza']
   ];
 
-  function formVisita(shopId, visitaId) {
+  function formVisita(shopId, visitaId, paradaId) {
     const v = visitaId ? DB.porId(DB.estado.visitas, visitaId) : null;
     const shop = DB.cafeteria(v ? v.coffee_shop_id : shopId);
     if (!shop) return;
@@ -2868,10 +3420,18 @@ const APP = (() => {
         };
         if (v) await DB.editarVisita(v.id, datos);
         else {
-          await DB.nuevaVisita(datos);
+          const rv = await DB.nuevaVisita(datos);
           /* La primera visita cambia sola el estado: si decía "quiero ir", ya fue */
           if (shop.estado_personal === 'quiero_ir') {
             await DB.editarCafeteria(shop.id, { estado_personal: 'visitada' });
+          }
+          /* Si venía de una parada de ruta, la parada queda enlazada con la visita
+             real: el "hecho" no es una casilla marcada a mano. */
+          const nueva = rv.datos && rv.datos[0];
+          if (paradaId && nueva) {
+            await DB.editarParada(paradaId, { cafe_visit_id: nueva.id });
+          } else if (paradaId && !nueva) {
+            toast('Visita guardada sin conexión: cuando se suba, marca la parada a mano.', 'error');
           }
         }
         toast(v ? 'Visita guardada.' : 'Visita registrada.');
@@ -3137,7 +3697,8 @@ const APP = (() => {
     irA, cerrarModal, formCafe, formLote, formMovimiento, detalleCafe,
     prepararCon, iniciarPreparacion, formEvaluacion, formDuplicarReceta,
     verVersiones, usarVersion, formComparar, formDeseo, formTostador,
-    formCafeteria, formVisita, bitacoraTab,
+    formCafeteria, formVisita, bitacoraTab, rutaTab,
+    formRuta, formParada, formIdea,
     borrarCafe, borrarPreparacion: borrarPrep, forzarSync, descartarFallida, salir, abrirPerfil, toast
   };
 })();

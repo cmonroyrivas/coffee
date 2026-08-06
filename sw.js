@@ -7,7 +7,7 @@
    abre igual sin conexion (art. 38).
    ============================================================ */
 
-const VERSION = 'diario-cafe-v3-7';
+const VERSION = 'diario-cafe-v3-8';
 const SHELL = [
   './',
   './index.html',
